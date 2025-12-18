@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  image         String?
+  password      String?  // Add password field for credentials auth
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  chatSessions  ChatSession[]
+  settings      UserSettings?
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // AI Provider Settings
+  aiProvider String   @default("zai") // "zai" or "ollama"
+  ollamaUrl  String?  // Ollama server URL
+  ollamaModel String? // Selected Ollama model
+
+  // User Preferences
+  theme      String   @default("system") // "light", "dark", "system"
+  language   String   @default("en")
+  fontSize   String   @default("medium") // "small", "medium", "large"
+
+  // Chat Settings
+  maxTokens  Int      @default(1000)
+  temperature Float   @default(0.7)
+  autoSave   Boolean  @default(true)
+
+  // UI Settings
+  sidebarCollapsed Boolean @default(false)
+  showTimestamps  Boolean  @default(true)
+
+  // Chat Mode
+  chatMode String @default("chat")
+
+  // Self-Healing Configuration
+  selfHealingEnabled Boolean @default(false)
+
+  // LLM Configuration
+  llmModel String? @default("microsoft/DialoGPT-medium")
+  llmTemperature Float? @default(0.7)
+  embeddingModel String? @default("all-MiniLM-L6-v2")
+
+  // Document Processing
+  chunkSize Int? @default(512)
+  chunkOverlap Int? @default(50)
+
+  // Vector Database
+  qdrantUrl String? @default("http://localhost:6333")
+  qdrantApiKey String?
+  qdrantUseCloud Boolean? @default(false)
+  defaultCollection String? @default("documents")
+
+  // Observability
+  langfuseEnabled Boolean? @default(true)
+  langfuseHost String? @default("http://localhost:3001")
+  langfuseSecretKey String?
+  langfusePublicKey String?
+  langfuseSampleRate Float? @default(1.0)
+
+  // File Upload
+  maxUploadSize Int? @default(10485760) // 10MB
+
+  // Document Folder Monitoring
+  documentFolderPath String? @default("./documents")
+
+  // Infrastructure Keywords
+  infrastructureKeywords String? @default("docker,kubernetes,k8s,server,database,db,port,host,endpoint,api,aws,azure,gcp,cloud,infra,infrastructure,deploy,container,cluster,virtual machine,vm,network,load balancer,storage,backup,monitoring,logging,alert,scaling,auto-scal,firewall,security,ssl,certificate,domain,subdomain")
+
+  // Backend Configuration
+  prometheusUrl String?
+  lokiUrl String?
+  postgresUrl String?
+  redisUrl String?
+  embedModelName String?
+  maxNewTokens Int?
+  scanCron String?
+  networkCidr String?
+  topKRetrieval Int?
+  useRedisQueue Boolean? @default(false)
+  queueDir String?
+  logLevel String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatSession {
+  id          String   @id @default(cuid())
+  title       String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  messages    Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  role      String   // 'user' or 'assistant'
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

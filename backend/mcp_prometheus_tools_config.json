@@ -1,0 +1,692 @@
+{
+  "_metadata": {
+    "source": "https://github.com/prometheus-mcp-server",
+    "description": "Complete MCP server tools configuration for Prometheus monitoring",
+    "version": "1.5.1",
+    "transport": "stateless-http",
+    "protocol": "JSON-RPC 2.0"
+  },
+  "server_info": {
+    "command": "docker run -d --name prometheus-mcp-server -e PROMETHEUS_URL=http://host:30909 -p 8080:8080 prometheus-mcp-server:latest",
+    "endpoint": "http://192.168.203.103:8080/jsonrpc",
+    "accept_headers": "application/json",
+    "response_format": "JSON-RPC 2.0 response objects",
+    "authentication": "None required (open access design)"
+  },
+  "mcp_tools": {
+    "health_check": {
+      "name": "health_check",
+      "description": "Check server and Prometheus connectivity status",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "health_check",
+          "arguments": {}
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["healthy", "degraded", "unhealthy"],
+            "description": "Overall service health status"
+          },
+          "service": {
+            "type": "string",
+            "description": "Service identifier",
+            "example": "prometheus-jsonrpc-server"
+          },
+          "version": {
+            "type": "string",
+            "description": "Server version",
+            "example": "1.5.1"
+          },
+          "timestamp": {
+            "type": "string",
+            "description": "ISO8601 timestamp of check",
+            "format": "date-time"
+          },
+          "configuration": {
+            "type": "object",
+            "properties": {
+              "prometheus_url_configured": {
+                "type": "boolean",
+                "description": "Whether Prometheus URL is configured"
+              }
+            }
+          },
+          "prometheus_connectivity": {
+            "type": "string",
+            "enum": ["healthy", "unhealthy"],
+            "description": "Prometheus server connectivity status"
+          },
+          "prometheus_url": {
+            "type": "string",
+            "description": "Configured Prometheus server URL"
+          },
+          "prometheus_error": {
+            "type": "string",
+            "description": "Error message if Prometheus connectivity fails"
+          },
+          "error": {
+            "type": "string",
+            "description": "General error message"
+          }
+        },
+        "required": ["status", "service", "version", "timestamp"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Health Check",
+        "description": "Check server and Prometheus connectivity status"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "health_check",
+          "arguments": {}
+        },
+        "id": 1
+      },
+      "implementation_notes": [
+        "Tests Prometheus connectivity by executing 'up' query",
+        "Returns degraded status if Prometheus is unreachable",
+        "Includes configuration validation",
+        "No authentication required"
+      ]
+    },
+    "execute_query": {
+      "name": "execute_query",
+      "description": "Execute instant PromQL queries against Prometheus",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "execute_query",
+          "arguments": {
+            "query": "",
+            "time": null
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "PromQL query expression",
+            "example": "up",
+            "minLength": 1
+          },
+          "time": {
+            "type": "string",
+            "description": "RFC3339 or Unix timestamp (defaults to current time)",
+            "format": "date-time",
+            "example": "2025-12-16T20:59:12Z"
+          }
+        },
+        "required": ["query"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "resultType": {
+            "type": "string",
+            "enum": ["vector", "matrix", "scalar", "string"],
+            "description": "Type of query result"
+          },
+          "result": {
+            "type": "array",
+            "description": "Query results in Prometheus format",
+            "items": {
+              "type": "object"
+            }
+          },
+          "links": {
+            "type": "array",
+            "description": "Prometheus UI links (if PROMETHEUS_DISABLE_LINKS=false)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string",
+                  "description": "Prometheus UI link"
+                },
+                "rel": {
+                  "type": "string",
+                  "example": "prometheus-ui"
+                },
+                "title": {
+                  "type": "string",
+                  "example": "View in Prometheus UI"
+                }
+              }
+            }
+          }
+        },
+        "required": ["resultType", "result"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Execute PromQL Query",
+        "description": "Execute instant PromQL queries against Prometheus"
+      },
+      "example_payloads": [
+        {
+          "description": "Check if Prometheus targets are up",
+          "payload": {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "name": "execute_query",
+              "arguments": {
+                "query": "up"
+              }
+            },
+            "id": 1
+          }
+        },
+        {
+          "description": "Get CPU usage percentage",
+          "payload": {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "name": "execute_query",
+              "arguments": {
+                "query": "100 - (avg by(instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)"
+              }
+            },
+            "id": 2
+          }
+        }
+      ],
+      "implementation_notes": [
+        "Makes /api/v1/query request to Prometheus",
+        "Supports all PromQL expressions",
+        "Includes optional Prometheus UI links for visualization",
+        "Handles time-based queries"
+      ]
+    },
+    "execute_range_query": {
+      "name": "execute_range_query",
+      "description": "Execute PromQL range queries with time series data",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "execute_range_query",
+          "arguments": {
+            "query": "",
+            "start": "",
+            "end": "",
+            "step": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "PromQL query expression",
+            "example": "up",
+            "minLength": 1
+          },
+          "start": {
+            "type": "string",
+            "description": "Start time (RFC3339 or Unix timestamp)",
+            "format": "date-time",
+            "example": "2025-12-16T20:00:00Z"
+          },
+          "end": {
+            "type": "string",
+            "description": "End time (RFC3339 or Unix timestamp)",
+            "format": "date-time",
+            "example": "2025-12-16T21:00:00Z"
+          },
+          "step": {
+            "type": "string",
+            "description": "Step interval (e.g., '15s', '1m', '1h')",
+            "example": "15s",
+            "pattern": "^\\d+[smhd]$"
+          }
+        },
+        "required": ["query", "start", "end", "step"]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "resultType": {
+            "type": "string",
+            "enum": ["matrix"],
+            "description": "Always 'matrix' for range queries"
+          },
+          "result": {
+            "type": "array",
+            "description": "Time series data",
+            "items": {
+              "type": "object"
+            }
+          },
+          "links": {
+            "type": "array",
+            "description": "Prometheus UI links with time range (if PROMETHEUS_DISABLE_LINKS=false)",
+            "items": {
+              "type": "object",
+              "properties": {
+                "href": {
+                  "type": "string",
+                  "description": "Prometheus UI link with range parameters"
+                },
+                "rel": {
+                  "type": "string",
+                  "example": "prometheus-ui"
+                },
+                "title": {
+                  "type": "string",
+                  "example": "View in Prometheus UI"
+                }
+              }
+            }
+          }
+        },
+        "required": ["resultType", "result"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Execute Range Query",
+        "description": "Execute PromQL range queries with time series data"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "execute_range_query",
+          "arguments": {
+            "query": "rate(http_requests_total[5m])",
+            "start": "2025-12-16T20:00:00Z",
+            "end": "2025-12-16T21:00:00Z",
+            "step": "1m"
+          }
+        },
+        "id": 3
+      },
+      "implementation_notes": [
+        "Makes /api/v1/query_range request to Prometheus",
+        "Returns matrix-type results with timestamps",
+        "Includes UI links with time range parameters",
+        "Supports various step intervals"
+      ]
+    },
+    "list_metrics": {
+      "name": "list_metrics",
+      "description": "List all available metric names with pagination and filtering",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "list_metrics",
+          "arguments": {
+            "limit": null,
+            "offset": null,
+            "filter_pattern": null
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "limit": {
+            "type": "integer",
+            "description": "Maximum metrics to return (default: all)",
+            "minimum": 1,
+            "maximum": 10000
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Pagination offset (default: 0)",
+            "minimum": 0,
+            "default": 0
+          },
+          "filter_pattern": {
+            "type": "string",
+            "description": "Case-insensitive substring filter",
+            "example": "cpu"
+          }
+        },
+        "required": []
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "metrics": {
+            "type": "array",
+            "description": "Array of metric names",
+            "items": {
+              "type": "string"
+            }
+          },
+          "total_count": {
+            "type": "integer",
+            "description": "Total metrics before pagination",
+            "minimum": 0
+          },
+          "returned_count": {
+            "type": "integer",
+            "description": "Metrics in this response",
+            "minimum": 0
+          },
+          "offset": {
+            "type": "integer",
+            "description": "Current offset",
+            "minimum": 0
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether more metrics available"
+          }
+        },
+        "required": ["metrics", "total_count", "returned_count", "offset", "has_more"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "List Metrics",
+        "description": "List all available metric names with pagination and filtering"
+      },
+      "example_payloads": [
+        {
+          "description": "List first 50 metrics",
+          "payload": {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "name": "list_metrics",
+              "arguments": {
+                "limit": 50
+              }
+            },
+            "id": 4
+          }
+        },
+        {
+          "description": "Search for CPU-related metrics",
+          "payload": {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "name": "list_metrics",
+              "arguments": {
+                "filter_pattern": "cpu"
+              }
+            },
+            "id": 5
+          }
+        }
+      ],
+      "implementation_notes": [
+        "Queries /api/v1/label/__name__/values endpoint",
+        "Implements server-side caching (5-minute TTL)",
+        "Supports case-insensitive filtering",
+        "Handles pagination for large metric sets"
+      ]
+    },
+    "get_metric_metadata": {
+      "name": "get_metric_metadata",
+      "description": "Retrieve metadata for specific metrics",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "get_metric_metadata",
+          "arguments": {
+            "metric": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "metric": {
+            "type": "string",
+            "description": "Metric name to get metadata for",
+            "example": "node_cpu_seconds_total",
+            "minLength": 1
+          }
+        },
+        "required": ["metric"]
+      },
+      "output_schema": {
+        "type": "array",
+        "description": "Array of metadata objects",
+        "items": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["gauge", "counter", "histogram", "summary"],
+              "description": "Metric type"
+            },
+            "help": {
+              "type": "string",
+              "description": "Human-readable description"
+            },
+            "unit": {
+              "type": "string",
+              "description": "Unit of measurement"
+            }
+          },
+          "required": ["type", "help"]
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get Metric Metadata",
+        "description": "Retrieve metadata for specific metrics"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "get_metric_metadata",
+          "arguments": {
+            "metric": "node_cpu_seconds_total"
+          }
+        },
+        "id": 6
+      },
+      "implementation_notes": [
+        "Queries /api/v1/metadata?metric={name} endpoint",
+        "Returns Prometheus metric metadata",
+        "Handles metrics with multiple metadata entries",
+        "Returns empty array if metric not found"
+      ]
+    },
+    "get_targets": {
+      "name": "get_targets",
+      "description": "Get information about Prometheus scrape targets",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "get_targets",
+          "arguments": {}
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "activeTargets": {
+            "type": "array",
+            "description": "Currently active scrape targets",
+            "items": {
+              "type": "object",
+              "properties": {
+                "discoveredLabels": {
+                  "type": "object",
+                  "description": "Target discovery labels",
+                  "additionalProperties": true
+                },
+                "labels": {
+                  "type": "object",
+                  "description": "Final target labels",
+                  "additionalProperties": true
+                },
+                "scrapePool": {
+                  "type": "string",
+                  "description": "Scrape pool name"
+                },
+                "scrapeUrl": {
+                  "type": "string",
+                  "description": "Target URL"
+                },
+                "lastError": {
+                  "type": "string",
+                  "description": "Last scrape error"
+                },
+                "lastScrape": {
+                  "type": "string",
+                  "description": "Last scrape time (ISO8601)",
+                  "format": "date-time"
+                },
+                "lastScrapeDuration": {
+                  "type": "number",
+                  "description": "Scrape duration in seconds"
+                },
+                "health": {
+                  "type": "string",
+                  "enum": ["up", "down", "unknown"],
+                  "description": "Target health status"
+                }
+              }
+            }
+          },
+          "droppedTargets": {
+            "type": "array",
+            "description": "Dropped scrape targets",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        },
+        "required": ["activeTargets", "droppedTargets"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get Targets",
+        "description": "Get information about Prometheus scrape targets"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "get_targets",
+          "arguments": {}
+        },
+        "id": 7
+      },
+      "implementation_notes": [
+        "Queries /api/v1/targets endpoint",
+        "Returns both active and dropped targets",
+        "Includes detailed scrape status information",
+        "No authentication required"
+      ]
+    }
+  },
+  "tool_mappings": {
+    "infraai_to_mcp": {
+      "query_prometheus": {
+        "mcp_tool": "execute_query",
+        "parameter_mapping": {
+          "query": "query",
+          "time": "time"
+        }
+      },
+      "prometheus_health": {
+        "mcp_tool": "health_check"
+      },
+      "list_prometheus_metrics": {
+        "mcp_tool": "list_metrics",
+        "parameter_mapping": {
+          "limit": "limit",
+          "offset": "offset",
+          "filter_pattern": "filter_pattern"
+        }
+      }
+    }
+  },
+  "usage_guide": {
+    "connection": {
+      "environment_setup": [
+        "export MCP_PROMETHEUS_HTTP_URL=http://192.168.203.103:8080",
+        "export MCP_PROMETHEUS_TRANSPORT=stateless-http"
+      ],
+      "server_startup": "docker run -d --name prometheus-mcp-server -e PROMETHEUS_URL=http://host:30909 -p 8080:8080 prometheus-mcp-server:latest",
+      "test_connection": "curl -X POST http://192.168.203.103:8080/jsonrpc -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"health_check\",\"params\":{},\"id\":1}'"
+    },
+    "examples": [
+      {
+        "description": "Check Prometheus health",
+        "mcp_call": {
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "name": "health_check",
+            "arguments": {}
+          },
+          "id": 1
+        },
+        "expected_response": {
+          "jsonrpc": "2.0",
+          "id": 1,
+          "result": {
+            "status": "healthy",
+            "service": "prometheus-jsonrpc-server",
+            "version": "1.5.1"
+          }
+        }
+      },
+      {
+        "description": "Execute instant query",
+        "mcp_call": {
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "name": "execute_query",
+            "arguments": {
+              "query": "up"
+            }
+          },
+          "id": 2
+        }
+      },
+      {
+        "description": "List available metrics",
+        "mcp_call": {
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "name": "list_metrics",
+            "arguments": {
+              "limit": 50
+            }
+          },
+          "id": 3
+        }
+      }
+    ],
+    "error_handling": {
+      "jsonrpc_errors": "Include 'code' and 'message' fields",
+      "http_errors": "Follow standard REST conventions",
+      "prometheus_errors": "Wrapped in JSON-RPC error responses"
+    }
+  }
+}

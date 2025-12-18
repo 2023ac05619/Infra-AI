@@ -1,0 +1,15 @@
+vcenter:
+  host: <your_vcenter_host>
+  user: <your_vcenter_user>
+  password: <your_vcenter_password>
+  disable_ssl_verification: true
+  # Optional: Specify port if not 443
+  # port: 443
+
+# API Key for server authentication
+api_key: <your_api_key>
+
+# Server configuration
+server:
+  host: 0.0.0.0
+  port: 8000

@@ -1,0 +1,320 @@
+{
+  "source": "https://github.com/Flux159/mcp-server-kubernetes",
+  "description": "Comprehensive MCP Kubernetes server tools for InfraAI - Unified kubectl API",
+  "server_connection": {
+    "enable_http": "MCP_KUBERNETES_HTTP_ENABLED=true",
+    "server_url": "MCP_KUBERNETES_HTTP_URL=http://192.168.203.103:8082",
+    "endpoint": "MCP_KUBERNETES_ENDPOINT=/jsonrpc",
+    "transport": "stateless-http-jsonrpc",
+    "startup_command": "HOST=0.0.0.0 PORT=8082 node dist/index.js"
+  },
+  "available_tools": [
+    {
+      "mcp_name": "kubectl_get",
+      "description": "Get or list resources with kubectl",
+      "category": "Basic Operations",
+      "parameters": ["resourceType", "name", "namespace", "output"],
+      "usage": "kubectl_get(resourceType='pods', namespace='default')",
+      "infraai_mapping": ["get_pods", "get_deployments", "get_services", "list_resources"],
+      "readOnly": true,
+      "safe": true
+    },
+    {
+      "mcp_name": "kubectl_describe",
+      "description": "Describe resources with kubectl",
+      "category": "Basic Operations",
+      "parameters": ["resourceType", "name", "namespace"],
+      "usage": "kubectl_describe(resourceType='pod', name='app-pod', namespace='default')",
+      "infraai_mapping": ["describe_resource", "get_resource_details"],
+      "readOnly": true,
+      "safe": true
+    },
+    {
+      "mcp_name": "kubectl_logs",
+      "description": "Get logs with kubectl",
+      "category": "Observability",
+      "parameters": ["podName", "namespace", "tail", "follow"],
+      "usage": "kubectl_logs(podName='nginx', namespace='default', tail=50)",
+      "infraai_mapping": ["get_logs", "view_logs"],
+      "readOnly": true,
+      "safe": true
+    },
+    {
+      "mcp_name": "kubectl_context",
+      "description": "Manage kubectl contexts",
+      "category": "Configuration",
+      "parameters": ["action", "contextName"],
+      "usage": "kubectl_context(action='list') or kubectl_context(action='use', contextName='prod')",
+      "infraai_mapping": ["switch_context", "list_contexts"],
+      "readOnly": false,
+      "safe": true
+    },
+    {
+      "mcp_name": "explain_resource",
+      "description": "Explain Kubernetes resources",
+      "category": "Learning",
+      "parameters": ["resourceType"],
+      "usage": "explain_resource(resourceType='pod')",
+      "infraai_mapping": ["explain_resource", "resource_help"],
+      "readOnly": true,
+      "safe": true
+    },
+    {
+      "mcp_name": "list_api_resources",
+      "description": "List API resources",
+      "category": "Discovery",
+      "parameters": ["group", "version"],
+      "usage": "list_api_resources(group='apps', version='v1')",
+      "infraai_mapping": ["list_api_resources", "discover_resources"],
+      "readOnly": true,
+      "safe": true
+    },
+    {
+      "mcp_name": "kubectl_scale",
+      "description": "Scale resources with kubectl (Advanced - replaces legacy scale_deployment)",
+      "category": "Scaling",
+      "parameters": ["resourceType", "name", "replicas", "namespace"],
+      "usage": "kubectl_scale(resourceType='deployment', name='web-app', replicas=5, namespace='prod')",
+      "infraai_mapping": ["scale_deployment", "scale_workload"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "kubectl_create",
+      "description": "Create resources with kubectl",
+      "category": "Resource Management",
+      "parameters": ["manifest", "namespace"],
+      "usage": "kubectl_create(manifest='yaml_content', namespace='default')",
+      "infraai_mapping": ["create_resource", "provision_resource"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "kubectl_apply",
+      "description": "Apply YAML manifests with kubectl",
+      "category": "Resource Management",
+      "parameters": ["filename", "manifest", "namespace"],
+      "usage": "kubectl_apply(filename='/path/to/manifest.yaml', namespace='default')",
+      "infraai_mapping": ["apply_manifest", "update_resource"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "kubectl_patch",
+      "description": "Update field(s) of a resource with kubectl",
+      "category": "Resource Management",
+      "parameters": ["resourceType", "name", "namespace", "patchType", "patch"],
+      "usage": "kubectl_patch(resourceType='deployment', name='app', patchType='merge', patch='{\"spec\":{\"replicas\": 3}}')",
+      "infraai_mapping": ["update_resource", "patch_resource"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "kubectl_delete",
+      "description": "Delete resources with kubectl",
+      "category": "Resource Management",
+      "parameters": ["resourceType", "name", "namespace"],
+      "usage": "kubectl_delete(resourceType='pod', name='bad-pod', namespace='default')",
+      "infraai_mapping": ["restart_pod", "delete_resource"],
+      "readOnly": false,
+      "safe": false,
+      "destructive": true
+    },
+    {
+      "mcp_name": "kubectl_rollout",
+      "description": "Manage deployment rollouts with kubectl",
+      "category": "Deployment Management",
+      "parameters": ["action", "resourceType", "name", "namespace"],
+      "usage": "kubectl_rollout(action='restart', resourceType='deployment', name='web-app')",
+      "infraai_mapping": ["rollout_management", "deployment_control"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "kubectl_generic",
+      "description": "Execute any kubectl command",
+      "category": "Advanced",
+      "parameters": ["command", "namespace"],
+      "usage": "kubectl_generic(command='get nodes -o wide', namespace='')",
+      "infraai_mapping": ["custom_kubectl", "raw_command"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "ping",
+      "description": "Verify connection with ping",
+      "category": "Diagnostics",
+      "parameters": ["host"],
+      "usage": "ping(host='8.8.8.8')",
+      "infraai_mapping": ["test_connectivity", "network_ping"],
+      "readOnly": true,
+      "safe": true
+    },
+    {
+      "mcp_name": "port_forward",
+      "description": "Port forward to pods and services",
+      "category": "Networking",
+      "parameters": ["resourceType", "name", "ports", "namespace"],
+      "usage": "port_forward(resourceType='pod', name='app-pod', ports='8080:8080', namespace='default')",
+      "infraai_mapping": ["port_forward", "local_access"],
+      "readOnly": false,
+      "safe": true
+    },
+    {
+      "mcp_name": "helm_install",
+      "description": "Install Helm charts",
+      "category": "Package Management",
+      "parameters": ["name", "chart", "namespace", "values"],
+      "usage": "helm_install(name='nginx', chart='nginx', namespace='default', values={'image.tag':'1.23.0'})",
+      "infraai_mapping": ["install_helm_chart"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "helm_upgrade",
+      "description": "Upgrade Helm releases",
+      "category": "Package Management",
+      "parameters": ["name", "chart", "namespace", "values"],
+      "usage": "helm_upgrade(name='nginx', chart='nginx', namespace='default')",
+      "infraai_mapping": ["upgrade_helm_release"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "helm_uninstall",
+      "description": "Uninstall Helm releases",
+      "category": "Package Management",
+      "parameters": ["name", "namespace"],
+      "usage": "helm_uninstall(name='nginx', namespace='default')",
+      "infraai_mapping": ["uninstall_helm_release"],
+      "readOnly": false,
+      "safe": false,
+      "destructive": true
+    },
+    {
+      "mcp_name": "helm_template_apply",
+      "description": "Template-based installation (bypass authentication)",
+      "category": "Advanced Package Management",
+      "parameters": ["name", "chart", "namespace", "values"],
+      "usage": "helm_template_apply(name='nginx', chart='nginx', namespace='default')",
+      "infraai_mapping": ["template_install"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "helm_template_uninstall",
+      "description": "Template-based uninstallation (bypass authentication)",
+      "category": "Advanced Package Management",
+      "parameters": ["name", "namespace"],
+      "usage": "helm_template_uninstall(name='nginx', namespace='default')",
+      "infraai_mapping": ["template_uninstall"],
+      "readOnly": false,
+      "safe": false,
+      "destructive": true
+    },
+    {
+      "mcp_name": "cleanup_pods",
+      "description": "Clean up problematic pods - Evicted, ContainerStatusUnknown, Completed, Error, ImagePullBackOff, CrashLoopBackOff",
+      "category": "Maintenance",
+      "parameters": ["namespace", "states", "dryRun"],
+      "usage": "cleanup_pods(namespace='default', states=['Evicted', 'Error'], dryRun=true)",
+      "infraai_mapping": ["cleanup_problematic_pods", "sanitize_environment"],
+      "readOnly": false,
+      "safe": false,
+      "destructive": true
+    },
+    {
+      "mcp_name": "node_management",
+      "description": "Cordoning, draining, and uncordoning nodes for maintenance and scaling operations",
+      "category": "Node Management",
+      "parameters": ["action", "nodeName", "ignoreDaemonSets"],
+      "usage": "node_management(action='drain', nodeName='node-01', ignoreDaemonSets=true)",
+      "infraai_mapping": ["manage_nodes", "maintenance_actions"],
+      "readOnly": false,
+      "safe": false
+    },
+    {
+      "mcp_name": "k8s_diagnose",
+      "description": "Kubernetes troubleshooting prompt - Guides through systematic flow for pod issues based on keyword",
+      "category": "Troubleshooting",
+      "parameters": ["keyword", "namespace", "resourceType"],
+      "usage": "k8s_diagnose(keyword='crashloopbackoff', namespace='prod', resourceType='pod')",
+      "infraai_mapping": ["troubleshoot_pod", "diagnose_issues"],
+      "readOnly": true,
+      "safe": true
+    }
+  ],
+  "tool_mapping_guide": {
+    "infraai_function_to_mcp_tool": {
+      "get_pods(namespace='default')": "kubectl_get(resourceType='pods', namespace='default')",
+      "get_deployments(namespace='prod')": "kubectl_get(resourceType='deployments', namespace='prod')",
+      "scale_deployment('web-app', replicas=5)": "kubectl_scale(resourceType='deployment', name='web-app', replicas=5)",
+      "restart_pod('buggy-pod')": "kubectl_delete(resourceType='pod', name='buggy-pod')",
+      "get_logs('app-pod', tail=100)": "kubectl_logs(podName='app-pod', tail=100)",
+      "port_forward_to_pod('web-app', '8080:8080')": "port_forward(resourceType='pod', name='web-app', ports='8080:8080')",
+      "cleanup_evicted_pods()": "cleanup_pods(states=['Evicted', 'Error'], dryRun=false)",
+      "drain_node('node-01')": "node_management(action='drain', nodeName='node-01', ignoreDaemonSets=true)",
+      "troubleshoot_crash_loop()": "k8s_diagnose(keyword='crashloopbackoff')",
+      "install_nginx_chart()": "helm_install(name='nginx', chart='nginx', namespace='default')",
+      "create_resource_from_yaml(yaml)": "kubectl_apply(manifest=yaml)"
+    },
+    "mcp_tool_categories": {
+      "basic_operations": ["kubectl_get", "kubectl_describe", "kubectl_logs", "kubectl_context"],
+      "resource_management": ["kubectl_create", "kubectl_apply", "kubectl_patch", "kubectl_delete"],
+      "scaling_replication": ["kubectl_scale", "kubectl_rollout"],
+      "networking": ["port_forward"],
+      "observability_learning": ["explain_resource", "list_api_resources", "k8s_diagnose"],
+      "package_management": ["helm_install", "helm_upgrade", "helm_uninstall", "helm_template_apply", "helm_template_uninstall"],
+      "maintenance_operations": ["cleanup_pods", "node_management"],
+      "advanced_poweful": ["kubectl_generic", "ping"]
+    }
+  },
+  "security_features": {
+    "secrets_masking": {
+      "enabled": true,
+      "description": "Masks sensitive data in kubectl get secrets commands, does not affect logs"
+    },
+    "read_only_mode": {
+      "available": true,
+      "description": "Non-destructive mode for read and create/update-only access to clusters"
+    }
+  },
+  "connection_tested": {
+    "status": "UPDATED",
+    "server_location": "192.168.203.103:8082/jsonrpc",
+    "last_verified": "2025-12-11",
+    "transport": "stateless-http-jsonrpc",
+    "tests_passed": [
+      "basic connectivity",
+      "MCP protocol handshake",
+      "client initialization",
+      "tool discovery protocol",
+      "JSON-RPC 2.0 compliance",
+      "stateless operation verification"
+    ]
+  },
+  "implementation_notes": [
+    "All MCP tools use stateless HTTP JSON-RPC 2.0 protocol",
+    "Each request is independent with no session state management",
+    "Accept header set to: application/json",
+    "Transport method: Stateless HTTP JSON-RPC",
+    "Endpoint: /jsonrpc (configurable via MCP_KUBERNETES_ENDPOINT)",
+    "Secret data is automatically masked in kubectl get secrets operations",
+    "Non-destructive read-only mode available for safe cluster inspection",
+    "Advanced Helm operations support custom values, repositories, and versions",
+    "Template-based Helm operations bypass authentication requirements",
+    "Pod cleanup handles multiple problematic states automatically",
+    "Node management operations support cordoning, draining, and uncordoning",
+    "k8s-diagnose provides systematic troubleshooting flow for pod issues",
+    "kubectl_generic allows execution of any kubectl command",
+    "Parameters must match inputSchema exactly for all tools",
+    "Each tool call returns a complete JSON-RPC response with result or error"
+  ],
+  "compatibility_matrix": {
+    "transport_methods": ["stateless-http-jsonrpc"],
+    "authentication_modes": ["kubeconfig", "service-account-token"],
+    "cluster_versions": ["1.19+", "tested on 1.24+"],
+    "helm_versions": ["3.x"],
+    "security_levels": ["read-only", "read-write", "admin"]
+  }
+}

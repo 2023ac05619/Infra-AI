@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String?
+  image         String?
+  password      String?  // Add password field for credentials auth
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  chatSessions  ChatSession[]
+  settings      UserSettings?
+}
+
+model UserSettings {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // AI Provider Settings
+  aiProvider String   @default("zai") // "zai" or "ollama"
+  ollamaUrl  String?  // Ollama server URL
+  ollamaModel String? // Selected Ollama model
+  
+  // User Preferences
+  theme      String   @default("system") // "light", "dark", "system"
+  language   String   @default("en")
+  fontSize   String   @default("medium") // "small", "medium", "large"
+  
+  // Chat Settings
+  maxTokens  Int      @default(1000)
+  temperature Float   @default(0.7)
+  autoSave   Boolean  @default(true)
+  
+  // UI Settings
+  sidebarCollapsed Boolean @default(false)
+  showTimestamps  Boolean @default(true)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChatSession {
+  id          String   @id @default(cuid())
+  title       String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  messages    Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  role      String   // 'user' or 'assistant'
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

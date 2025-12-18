@@ -1,0 +1,791 @@
+{
+  "_metadata": {
+    "source": "https://github.com/Flux159/mcp-server-kubernetes",
+    "description": "Complete MCP server tools configuration for Kubernetes operations",
+    "version": "from Flux159/mcp-server-kubernetes",
+    "transport": "streamable-http",
+    "protocol": "JSON-RPC 2.0"
+  },
+  "server_info": {
+    "command": "ENABLE_UNSAFE_STREAMABLE_HTTP_TRANSPORT=true HOST=0.0.0.0 PORT=8080 node dist/index.js",
+    "endpoint": "http://192.168.203.103:8080/mcp",
+    "accept_headers": "application/json, text/event-stream",
+    "response_format": "Server-Sent Events (SSE) with JSON-RPC"
+  },
+  "mcp_tools": {
+    "cleanup": {
+      "name": "cleanup",
+      "description": "Cleanup all managed resources",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "cleanup",
+          "arguments": {}
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "title": "Cleanup Resources",
+        "description": "Removes all resources managed by this MCP server"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "cleanup",
+          "arguments": {}
+        },
+        "id": 1
+      }
+    },
+    "kubectl_get": {
+      "name": "kubectl_get",
+      "description": "Get or list Kubernetes resources by resource type, name, and optionally namespace",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_get",
+          "arguments": {
+            "resourceType": "",
+            "name": "",
+            "namespace": "default",
+            "output": "name"
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "resourceType": {
+            "type": "string",
+            "description": "Type of resource to get (pods, deployments, services, nodes, namespaces, configmaps, secrets, jobs, cronjobs)",
+            "enum": ["pods", "deployments", "services", "nodes", "namespaces", "configmaps", "secrets", "jobs", "cronjobs", "events", "endpoints"]
+          },
+          "name": {
+            "type": "string",
+            "description": "Optional: Name of the specific resource (if empty, lists all resources of type)"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Optional: Namespace to search in (defaults to 'default')",
+            "default": "default"
+          },
+          "output": {
+            "type": "string",
+            "description": "Optional: Output format",
+            "enum": ["name", "wide", "yaml", "json"],
+            "default": "name"
+          }
+        },
+        "required": ["resourceType"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get Kubernetes Resources",
+        "description": "List or get specific Kubernetes resources"
+      },
+      "example_payloads": [
+        {
+          "description": "Get all pods in default namespace",
+          "payload": {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "name": "kubectl_get",
+              "arguments": {
+                "resourceType": "pods",
+                "namespace": "default"
+              }
+            },
+            "id": 1
+          }
+        },
+        {
+          "description": "Get specific deployment details",
+          "payload": {
+            "jsonrpc": "2.0",
+            "method": "tools/call",
+            "params": {
+              "name": "kubectl_get",
+              "arguments": {
+                "resourceType": "deployments",
+                "name": "my-app",
+                "namespace": "production",
+                "output": "wide"
+              }
+            },
+            "id": 2
+          }
+        }
+      ]
+    },
+    "kubectl_describe": {
+      "name": "kubectl_describe",
+      "description": "Show detailed information about a specific Kubernetes resource",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_describe",
+          "arguments": {
+            "resourceType": "",
+            "name": "",
+            "namespace": "default"
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "resourceType": {
+            "type": "string",
+            "description": "Type of resource (pod, deployment, service, etc.)"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the resource to describe"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Optional: Namespace of the resource",
+            "default": "default"
+          }
+        },
+        "required": ["resourceType", "name"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Describe Kubernetes Resource",
+        "description": "Get detailed information about a Kubernetes resource"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_describe",
+          "arguments": {
+            "resourceType": "pod",
+            "name": "my-pod-12345",
+            "namespace": "default"
+          }
+        },
+        "id": 3
+      }
+    },
+    "kubectl_logs": {
+      "name": "kubectl_logs",
+      "description": "Fetch logs from a pod",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_logs",
+          "arguments": {
+            "podName": "",
+            "namespace": "default",
+            "tail": 100,
+            "follow": false
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "podName": {
+            "type": "string",
+            "description": "Name of the pod to get logs from"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Optional: Namespace of the pod",
+            "default": "default"
+          },
+          "container": {
+            "type": "string",
+            "description": "Optional: Specific container name if pod has multiple containers"
+          },
+          "tail": {
+            "type": "integer",
+            "description": "Optional: Number of lines to show from the end",
+            "default": 100
+          },
+          "follow": {
+            "type": "boolean",
+            "description": "Optional: Whether to continuously follow the logs",
+            "default": false
+          }
+        },
+        "required": ["podName"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get Pod Logs",
+        "description": "Retrieve logs from a Kubernetes pod"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_logs",
+          "arguments": {
+            "podName": "nginx-pod-12345",
+            "namespace": "default",
+            "tail": 50
+          }
+        },
+        "id": 4
+      }
+    },
+    "kubectl_exec": {
+      "name": "kubectl_exec",
+      "description": "Execute commands inside a container",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_exec",
+          "arguments": {
+            "podName": "",
+            "command": "",
+            "namespace": "default",
+            "interactive": false
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "podName": {
+            "type": "string",
+            "description": "Name of the pod to execute in"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Optional: Namespace of the pod",
+            "default": "default"
+          },
+          "container": {
+            "type": "string",
+            "description": "Optional: Specific container to execute in"
+          },
+          "command": {
+            "type": "string",
+            "description": "Command to execute"
+          },
+          "interactive": {
+            "type": "boolean",
+            "description": "Whether to run interactively",
+            "default": false
+          }
+        },
+        "required": ["podName", "command"]
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "interactiveHint": true,
+        "title": "Execute Command in Container",
+        "description": "Run commands inside a Kubernetes container"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_exec",
+          "arguments": {
+            "podName": "debug-pod-12345",
+            "command": "ls -la",
+            "namespace": "default"
+          }
+        },
+        "id": 5
+      }
+    },
+    "kubectl_apply": {
+      "name": "kubectl_apply",
+      "description": "Apply a configuration to a resource by filename or stdin",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_apply",
+          "arguments": {
+            "filename": "",
+            "namespace": "default",
+            "dryRun": false
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "type": "string",
+            "description": "Path to file containing the configuration to apply"
+          },
+          "manifest": {
+            "type": "string",
+            "description": "Alternative: YAML/JSON manifest as string content"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Optional: Namespace to apply in",
+            "default": "default"
+          },
+          "dryRun": {
+            "type": "boolean",
+            "description": "Whether to perform a dry run",
+            "default": false
+          }
+        },
+        "required": ["filename"]
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "title": "Apply Kubernetes Manifest",
+        "description": "Apply a YAML manifest file to create/update Kubernetes resources"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_apply",
+          "arguments": {
+            "filename": "/path/to/deployment.yaml",
+            "namespace": "production"
+          }
+        },
+        "id": 6
+      }
+    },
+    "kubectl_delete": {
+      "name": "kubectl_delete",
+      "description": "Delete resources by resource type and name",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_delete",
+          "arguments": {
+            "resourceType": "",
+            "name": "",
+            "namespace": "default",
+            "force": false,
+            "gracePeriod": 30
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "resourceType": {
+            "type": "string",
+            "description": "Type of resource to delete"
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the resource to delete"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Optional: Namespace of the resource",
+            "default": "default"
+          },
+          "force": {
+            "type": "boolean",
+            "description": "Whether to force deletion",
+            "default": false
+          },
+          "gracePeriod": {
+            "type": "integer",
+            "description": "Grace period in seconds",
+            "default": 30
+          }
+        },
+        "required": ["resourceType", "name"]
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "title": "Delete Kubernetes Resource",
+        "description": "Delete a Kubernetes resource"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_delete",
+          "arguments": {
+            "resourceType": "pod",
+            "name": "bad-pod-12345",
+            "namespace": "default"
+          }
+        },
+        "id": 7
+      }
+    },
+    "kubectl_scale": {
+      "name": "kubectl_scale",
+      "description": "Scale a deployment, replica set, or replication controller",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_scale",
+          "arguments": {
+            "resourceType": "",
+            "name": "",
+            "replicas": 1,
+            "namespace": "default"
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "resourceType": {
+            "type": "string",
+            "description": "Type of resource to scale",
+            "enum": ["deployment", "replicaset", "statefulset"]
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the resource to scale"
+          },
+          "replicas": {
+            "type": "integer",
+            "description": "Number of desired replicas",
+            "minimum": 0
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Optional: Namespace of the resource",
+            "default": "default"
+          }
+        },
+        "required": ["resourceType", "name", "replicas"]
+      },
+      "annotations": {
+        "title": "Scale Kubernetes Deployment",
+        "description": "Scale the number of replicas for a Kubernetes deployment"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_scale",
+          "arguments": {
+            "resourceType": "deployment",
+            "name": "nginx-deployment",
+            "replicas": 3,
+            "namespace": "default"
+          }
+        },
+        "id": 8
+      }
+    },
+    "kubectl_rollout_status": {
+      "name": "kubectl_rollout_status",
+      "description": "Show rollout status of a deployment, daemon set, or stateful set",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_rollout_status",
+          "arguments": {
+            "resourceType": "",
+            "name": "",
+            "namespace": "default"
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "resourceType": {
+            "type": "string",
+            "description": "Type of resource",
+            "enum": ["deployment", "daemonset", "statefulset"]
+          },
+          "name": {
+            "type": "string",
+            "description": "Name of the resource"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Optional: Namespace of the resource",
+            "default": "default"
+          }
+        },
+        "required": ["resourceType", "name"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Kubernetes Rollout Status",
+        "description": "Check the rollout status of a Kubernetes deployment"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_rollout_status",
+          "arguments": {
+            "resourceType": "deployment",
+            "name": "my-app",
+            "namespace": "production"
+          }
+        },
+        "id": 9
+      }
+    },
+    "kubectl_port_forward": {
+      "name": "kubectl_port_forward",
+      "description": "Forward one or more local ports to a pod",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_port_forward",
+          "arguments": {
+            "podName": "",
+            "ports": [],
+            "namespace": "default"
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "podName": {
+            "type": "string",
+            "description": "Name of the pod to forward ports to"
+          },
+          "namespace": {
+            "type": "string",
+            "description": "Optional: Namespace of the pod",
+            "default": "default"
+          },
+          "ports": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Port mappings as 'local:remote'",
+            "example": ["8080:80", "8443:443"]
+          }
+        },
+        "required": ["podName", "ports"]
+      },
+      "annotations": {
+        "privilegedHint": true,
+        "title": "Port Forward to Pod",
+        "description": "Forward local ports to a running pod"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_port_forward",
+          "arguments": {
+            "podName": "web-server-pod",
+            "ports": ["8080:80"],
+            "namespace": "default"
+          }
+        },
+        "id": 10
+      }
+    },
+    "kubectl_taint": {
+      "name": "kubectl_taint",
+      "description": "Update the taints on one or more nodes",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_taint",
+          "arguments": {
+            "nodeName": "",
+            "key": "",
+            "value": "",
+            "effect": "",
+            "remove": false
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "nodeName": {
+            "type": "string",
+            "description": "Name of the node to taint"
+          },
+          "key": {
+            "type": "string",
+            "description": "Taint key"
+          },
+          "value": {
+            "type": "string",
+            "description": "Optional: Taint value"
+          },
+          "effect": {
+            "type": "string",
+            "description": "Taint effect",
+            "enum": ["NoSchedule", "PreferNoSchedule", "NoExecute"]
+          },
+          "remove": {
+            "type": "boolean",
+            "description": "Whether to remove the taint instead of adding",
+            "default": false
+          }
+        },
+        "required": ["nodeName", "key", "effect"]
+      },
+      "annotations": {
+        "privilegedHint": true,
+        "title": "Taint Kubernetes Node",
+        "description": "Modify taints on a Kubernetes node"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "kubectl_taint",
+          "arguments": {
+            "nodeName": "node-01",
+            "key": "dedicated",
+            "value": "gpu-team",
+            "effect": "NoSchedule"
+          }
+        },
+        "id": 11
+      }
+    }
+  },
+  "tool_mappings": {
+    "infraai_to_mcp": {
+      "get_pods": {
+        "mcp_tool": "kubectl_get",
+        "parameter_mapping": {
+          "namespace": "namespace"
+        },
+        "fixed_params": {
+          "resourceType": "pods"
+        }
+      },
+      "get_deployments": {
+        "mcp_tool": "kubectl_get",
+        "parameter_mapping": {
+          "namespace": "namespace"
+        },
+        "fixed_params": {
+          "resourceType": "deployments"
+        }
+      },
+      "get_services": {
+        "mcp_tool": "kubectl_get",
+        "parameter_mapping": {
+          "namespace": "namespace"
+        },
+        "fixed_params": {
+          "resourceType": "services"
+        }
+      },
+      "restart_pod": {
+        "mcp_tool": "kubectl_delete",
+        "parameter_mapping": {
+          "pod_name": "name",
+          "namespace": "namespace"
+        },
+        "fixed_params": {
+          "resourceType": "pod"
+        }
+      },
+      "scale_deployment": {
+        "mcp_tool": "kubectl_scale",
+        "parameter_mapping": {
+          "deployment_name": "name",
+          "replicas": "replicas",
+          "namespace": "namespace"
+        },
+        "fixed_params": {
+          "resourceType": "deployment"
+        }
+      },
+      "describe_resource": {
+        "mcp_tool": "kubectl_describe",
+        "parameter_mapping": {
+          "resource_type": "resourceType",
+          "name": "name",
+          "namespace": "namespace"
+        }
+      },
+      "get_logs": {
+        "mcp_tool": "kubectl_logs",
+        "parameter_mapping": {
+          "pod_name": "podName",
+          "namespace": "namespace",
+          "tail": "tail"
+        }
+      }
+    }
+  },
+  "usage_guide": {
+    "connection": {
+      "environment_setup": [
+        "export MCP_KUBERNETES_HTTP_ENABLED=true",
+        "export MCP_KUBERNETES_HTTP_URL=http://192.168.203.103:8080",
+        "export MCP_KUBERNETES_TRANSPORT=streamable"
+      ],
+      "server_startup": "ENABLE_UNSAFE_STREAMABLE_HTTP_TRANSPORT=true HOST=0.0.0.0 PORT=8080 node dist/index.js",
+      "test_connection": "curl -H 'Accept: application/json, text/event-stream' http://192.168.203.103:8080/mcp"
+    },
+    "examples": [
+      {
+        "description": "Get all pods in default namespace",
+        "mcp_call": {
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "name": "kubectl_get",
+            "arguments": {
+              "resourceType": "pods",
+              "namespace": "default"
+            }
+          },
+          "id": 1
+        },
+        "expected_response": "SSE formatted list of pods"
+      },
+      {
+        "description": "Scale deployment to 3 replicas",
+        "mcp_call": {
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "name": "kubectl_scale",
+            "arguments": {
+              "resourceType": "deployment",
+              "name": "web-app",
+              "replicas": 3
+            }
+          },
+          "id": 2
+        }
+      },
+      {
+        "description": "Get logs from a pod",
+        "mcp_call": {
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "name": "kubectl_logs",
+            "arguments": {
+              "podName": "web-app-pod-12345",
+              "namespace": "production",
+              "tail": 50
+            }
+          },
+          "id": 3
+        }
+      }
+    ]
+  }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  esxi-mcp-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: esxi-mcp-server
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      # Mount configuration file
+      - ./config.yaml:/app/config/config.yaml:ro
+      # Mount logs directory
+      - ./logs:/app/logs
+    environment:
+      # Configuration can be overridden via environment variables
+      - VCENTER_HOST=192.168.203.178
+      - VCENTER_USER=root
+      - VCENTER_PASSWORD=TempP@ssw0rd
+      - VCENTER_DATACENTER=
+      - VCENTER_CLUSTER=
+      - VCENTER_DATASTORE=
+      - VCENTER_NETWORK=VM Network
+      - VCENTER_INSECURE=true
+      - MCP_LOG_LEVEL=DEBUG
+      - MCP_PORT=8090
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+networks:
+  mcp-network:
+    driver: bridge

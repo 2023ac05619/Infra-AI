@@ -1,0 +1,630 @@
+{
+  "server_info": {
+    "source": "https://github.com/bright8192/esxi-mcp-server",
+    "description": "MCP server tools configuration for VMware ESXi management",
+    "transport": "stateless-http",
+    "protocol": "JSON-RPC 2.0",
+    "endpoint": "http://192.168.203.103:8090/mcp",
+    "command": "ENABLE_UNSAFE_STREAMABLE_HTTP_TRANSPORT=true HOST=0.0.0.0 PORT=8083 node dist/index.js"
+  },
+  "mcp_tools": {
+    "list_vms": {
+      "name": "list_vms",
+      "description": "List all virtual machines on the ESXi host",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "list_vms",
+          "arguments": {
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address (defaults to configured host)"
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "List Virtual Machines",
+        "description": "Get a list of all VMs on the ESXi host"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "list_vms",
+          "arguments": {}
+        },
+        "id": 1
+      }
+    },
+    "get_vm_info": {
+      "name": "get_vm_info",
+      "description": "Get detailed information about a specific virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "get_vm_info",
+          "arguments": {
+            "vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get VM Information",
+        "description": "Retrieve detailed configuration and status of a specific VM"
+      }
+    },
+    "power_on_vm": {
+      "name": "power_on_vm",
+      "description": "Power on a virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "power_on_vm",
+          "arguments": {
+            "vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine to power on"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name"]
+      },
+      "annotations": {
+        "title": "Power On VM",
+        "description": "Start a virtual machine"
+      }
+    },
+    "power_off_vm": {
+      "name": "power_off_vm",
+      "description": "Power off a virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "power_off_vm",
+          "arguments": {
+            "vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine to power off"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name"]
+      },
+      "annotations": {
+        "title": "Power Off VM",
+        "description": "Stop a virtual machine (hard power off)"
+      }
+    },
+    "suspend_vm": {
+      "name": "suspend_vm",
+      "description": "Suspend a virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "suspend_vm",
+          "arguments": {
+            "vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine to suspend"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name"]
+      },
+      "annotations": {
+        "title": "Suspend VM",
+        "description": "Suspend a running virtual machine"
+      }
+    },
+    "reset_vm": {
+      "name": "reset_vm",
+      "description": "Reset (hard restart) a virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "reset_vm",
+          "arguments": {
+            "vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine to reset"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name"]
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "title": "Reset VM",
+        "description": "Hard restart a virtual machine (equivalent to power cycling)"
+      }
+    },
+    "shutdown_vm": {
+      "name": "shutdown_vm",
+      "description": "Perform a graceful shutdown of a virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "shutdown_vm",
+          "arguments": {
+            "vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine to shutdown"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name"]
+      },
+      "annotations": {
+        "title": "Shutdown VM",
+        "description": "Gracefully shutdown a virtual machine"
+      }
+    },
+    "reboot_vm": {
+      "name": "reboot_vm",
+      "description": "Reboot a virtual machine (soft restart via guest OS)",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "reboot_vm",
+          "arguments": {
+            "vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine to reboot"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name"]
+      },
+      "annotations": {
+        "title": "Reboot VM",
+        "description": "Soft reboot via guest operating system"
+      }
+    },
+    "create_vm": {
+      "name": "create_vm",
+      "description": "Create a new virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "create_vm",
+          "arguments": {
+            "config": {},
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "config": {
+            "type": "object",
+            "description": "VM configuration object",
+            "properties": {
+              "name": {"type": "string", "description": "VM name"},
+              "memory_mb": {"type": "integer", "description": "Memory in MB"},
+              "cpu_count": {"type": "integer", "description": "Number of CPUs"},
+              "disk_gb": {"type": "integer", "description": "Disk size in GB"},
+              "datastore": {"type": "string", "description": "Datastore name"},
+              "network": {"type": "string", "description": "Network name"},
+              "guest_os": {"type": "string", "description": "Guest OS type"}
+            },
+            "required": ["name"]
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["config"]
+      },
+      "annotations": {
+        "title": "Create VM",
+        "description": "Create a new virtual machine with specified configuration"
+      }
+    },
+    "delete_vm": {
+      "name": "delete_vm",
+      "description": "Delete a virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "delete_vm",
+          "arguments": {
+            "vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine to delete"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name"]
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "title": "Delete VM",
+        "description": "Permanently delete a virtual machine"
+      }
+    },
+    "clone_vm": {
+      "name": "clone_vm",
+      "description": "Clone an existing virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "clone_vm",
+          "arguments": {
+            "source_vm": "",
+            "new_vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "source_vm": {
+            "type": "string",
+            "description": "Name of the source VM to clone"
+          },
+          "new_vm_name": {
+            "type": "string",
+            "description": "Name for the cloned VM"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["source_vm", "new_vm_name"]
+      },
+      "annotations": {
+        "title": "Clone VM",
+        "description": "Create a copy of an existing virtual machine"
+      }
+    },
+    "get_host_info": {
+      "name": "get_host_info",
+      "description": "Get detailed information about the ESXi host",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "get_host_info",
+          "arguments": {
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address (defaults to configured host)"
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get Host Information",
+        "description": "Retrieve comprehensive information about the ESXi host"
+      }
+    },
+    "list_datastores": {
+      "name": "list_datastores",
+      "description": "List all available datastores on the ESXi host",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "list_datastores",
+          "arguments": {
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "List Datastores",
+        "description": "Get list of available storage datastores"
+      }
+    },
+    "list_networks": {
+      "name": "list_networks",
+      "description": "List all available networks on the ESXi host",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "list_networks",
+          "arguments": {
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": []
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "List Networks",
+        "description": "Get list of available virtual networks"
+      }
+    },
+    "get_vm_snapshots": {
+      "name": "get_vm_snapshots",
+      "description": "Get all snapshots for a virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "get_vm_snapshots",
+          "arguments": {
+            "vm_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get VM Snapshots",
+        "description": "List all snapshots for a specific VM"
+      }
+    },
+    "create_snapshot": {
+      "name": "create_snapshot",
+      "description": "Create a snapshot of a virtual machine",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "create_snapshot",
+          "arguments": {
+            "vm_name": "",
+            "snapshot_name": "",
+            "description": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine"
+          },
+          "snapshot_name": {
+            "type": "string",
+            "description": "Name for the snapshot"
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional description for the snapshot"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name", "snapshot_name"]
+      },
+      "annotations": {
+        "title": "Create VM Snapshot",
+        "description": "Create a point-in-time snapshot of a VM"
+      }
+    },
+    "delete_snapshot": {
+      "name": "delete_snapshot",
+      "description": "Delete a VM snapshot",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "delete_snapshot",
+          "arguments": {
+            "vm_name": "",
+            "snapshot_name": "",
+            "host": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "vm_name": {
+            "type": "string",
+            "description": "Name of the virtual machine"
+          },
+          "snapshot_name": {
+            "type": "string",
+            "description": "Name of the snapshot to delete"
+          },
+          "host": {
+            "type": "string",
+            "description": "Optional ESXi host address"
+          }
+        },
+        "required": ["vm_name", "snapshot_name"]
+      },
+      "annotations": {
+        "destructiveHint": true,
+        "title": "Delete Snapshot",
+        "description": "Remove a VM snapshot"
+      }
+    }
+  },
+  "tool_mappings": {
+    "infraai_to_esxi": {
+      "list_vms": "list_vms",
+      "get_vm_details": "get_vm_info",
+      "start_vm": "power_on_vm",
+      "stop_vm": "power_off_vm",
+      "shutdown_vm": "shutdown_vm",
+      "reboot_vm": "reboot_vm",
+      "suspend_vm": "suspend_vm",
+      "hard_reboot": "reset_vm",
+      "create_vm": "create_vm",
+      "clone_vm": "clone_vm",
+      "delete_vm": "delete_vm",
+      "host_info": "get_host_info",
+      "list_storages": "list_datastores",
+      "list_networks": "list_networks",
+      "get_snapshots": "get_vm_snapshots",
+      "create_snapshot": "create_snapshot",
+      "delete_snapshot": "delete_snapshot"
+    }
+  },
+  "usage_examples": {
+    "connection_setup": [
+      "export MCP_ESXI_HTTP_ENABLED=true",
+      "export MCP_ESXI_HTTP_URL=http://192.168.203.103:8090",
+      "export MCP_ESXI_TRANSPORT=stateless"
+    ],
+    "common_operations": [
+      "List all VMs: {\"name\": \"list_vms\", \"arguments\": {}}",
+      "Power on VM: {\"name\": \"power_on_vm\", \"arguments\": {\"vm_name\": \"my-vm\"}}",
+      "Get VM info: {\"name\": \"get_vm_info\", \"arguments\": {\"vm_name\": \"my-vm\"}}",
+      "Host information: {\"name\": \"get_host_info\", \"arguments\": {}}"
+    ],
+    "vm_management": [
+      "Power operations: power_on_vm, power_off_vm, shutdown_vm, reboot_vm, reset_vm, suspend_vm",
+      "Lifecycle: create_vm, delete_vm, clone_vm",
+      "Snapshots: get_vm_snapshots, create_snapshot, delete_snapshot"
+    ]
+  },
+  "connection_status": {
+    "configured_for": "192.168.203.103:8090",
+    "transport_method": "Stateless HTTP JSON-RPC with MCP protocol",
+    "last_verified": "2025-12-10",
+    "server_status": "Ready for deployment",
+    "authentication_note": "MCP server handles ESXi authentication internally"
+  }
+}

@@ -1,0 +1,11 @@
+vcenter_host: "192.168.203.178"
+vcenter_user: "root"
+vcenter_password: "TempP@ssw0rd"
+datacenter: ""  # Auto-detect for standalone ESXi
+cluster: ""     # No clusters on standalone ESXi
+datastore: ""   # Auto-select largest available datastore
+network: "VM Network"
+insecure: true
+log_file: "./logs/vmware_mcp.log"
+log_level: "DEBUG"
+port: 9090

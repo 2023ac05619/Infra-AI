@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Restart Crashed Pod",
+    "description": "Automatically restart pods that are crash looping",
+    "condition": {
+      "labels": {
+        "alertname": "PodCrashLoop"
+      },
+      "status": "firing"
+    },
+    "action": {
+      "tool": "mcp_restart_pod",
+      "params": {
+        "pod_name": "${label.pod_name}",
+        "namespace": "${label.namespace}"
+      }
+    },
+    "priority": 10
+  },
+  {
+    "name": "Scale Up on High CPU",
+    "description": "Scale deployment when CPU usage is high",
+    "condition": {
+      "labels": {
+        "alertname": "HighCPUUsage",
+        "severity": "warning"
+      }
+    },
+    "action": {
+      "tool": "mcp_scale_deployment",
+      "params": {
+        "deployment_name": "${label.deployment}",
+        "namespace": "${label.namespace}",
+        "replicas": 5
+      }
+    },
+    "priority": 20
+  },
+  {
+    "name": "Restart VM on Service Failure",
+    "description": "Restart VM when critical service fails",
+    "condition": {
+      "labels": {
+        "alertname": "ServiceDown",
+        "service_type": "critical"
+      }
+    },
+    "action": {
+      "tool": "mcp_restart_vm",
+      "params": {
+        "vm_name": "${label.vm_name}"
+      }
+    },
+    "priority": 5
+  },
+  {
+    "name": "Query Metrics on Alert",
+    "description": "Query Prometheus for context when alert fires",
+    "condition": {
+      "labels": {
+        "alertname": "HighMemoryUsage"
+      }
+    },
+    "action": {
+      "tool": "mcp_query_prometheus",
+      "params": {
+        "query": "container_memory_usage_bytes{pod=\"${label.pod_name}\"}"
+      }
+    },
+    "priority": 50
+  }
+]

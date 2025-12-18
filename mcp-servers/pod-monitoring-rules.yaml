@@ -1,0 +1,148 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: pod-resource-monitoring
+  namespace: observability
+  labels:
+    app: kube-prometheus-stack
+    release: kube-prom-stack
+spec:
+  groups:
+  - name: pod.cpu.usage
+    rules:
+    - record: pod:container_cpu_usage:rate5m
+      expr: sum(rate(container_cpu_usage_seconds_total[5m])) by (pod, namespace, container)
+      labels:
+        metric_type: cpu_usage_seconds
+
+    - record: pod:cpu_usage_cores:rate5m
+      expr: sum(rate(container_cpu_usage_seconds_total[5m])) by (pod, namespace)
+      labels:
+        unit: cores
+
+    - record: pod:cpu_usage_percent:rate5m
+      expr: |
+        sum(rate(container_cpu_usage_seconds_total[5m])) by (pod, namespace)
+        / sum(kube_pod_container_resource_limits_cpu_cores) by (pod, namespace)
+        * 100
+      labels:
+        unit: percent
+
+    - alert: PodHighCPUUsage
+      expr: |
+        sum(rate(container_cpu_usage_seconds_total[5m])) by (pod, namespace)
+        / sum(kube_pod_container_resource_limits_cpu_cores) by (pod, namespace) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is using high CPU"
+        description: "Pod {{ $labels.pod }} CPU usage is {{ $value | printf \"%.2f\" }}% of its limit"
+
+    - alert: PodCriticalCPUUsage
+      expr: |
+        sum(rate(container_cpu_usage_seconds_total[5m])) by (pod, namespace)
+        / sum(kube_pod_container_resource_limits_cpu_cores) by (pod, namespace) > 0.95
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is using critical CPU"
+        description: "Pod {{ $labels.pod }} CPU usage is {{ $value | printf \"%.2f\" }}% of its limit"
+
+  - name: pod.memory.usage
+    rules:
+    - record: pod:container_memory_usage_bytes:sum
+      expr: sum(container_memory_usage_bytes) by (pod, namespace, container)
+      labels:
+        metric_type: memory_usage_bytes
+
+    - record: pod:memory_usage_bytes:sum
+      expr: sum(container_memory_usage_bytes) by (pod, namespace)
+      labels:
+        unit: bytes
+
+    - record: pod:memory_usage_percent:ratio
+      expr: |
+        sum(container_memory_usage_bytes) by (pod, namespace)
+        / sum(kube_pod_container_resource_limits_memory_bytes) by (pod, namespace)
+        * 100
+      labels:
+        unit: percent
+
+    - alert: PodHighMemoryUsage
+      expr: |
+        sum(container_memory_usage_bytes) by (pod, namespace)
+        / sum(kube_pod_container_resource_limits_memory_bytes) by (pod, namespace) > 0.8
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is using high memory"
+        description: "Pod {{ $labels.pod }} memory usage is {{ $value | printf \"%.2f\" }}% of its limit"
+
+    - alert: PodCriticalMemoryUsage
+      expr: |
+        sum(container_memory_usage_bytes) by (pod, namespace)
+        / sum(kube_pod_container_resource_limits_memory_bytes) by (pod, namespace) > 0.95
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is using critical memory"
+        description: "Pod {{ $labels.pod }} memory usage is {{ $value | printf \"%.2f\" }}% of its limit"
+
+  - name: pod.resource.aggregates
+    rules:
+    - record: namespace:pod_cpu_usage_cores:sum
+      expr: sum(pod:cpu_usage_cores:rate5m) by (namespace)
+      labels:
+        aggregate: namespace_total
+
+    - record: namespace:pod_memory_usage_bytes:sum
+      expr: sum(pod:memory_usage_bytes:sum) by (namespace)
+      labels:
+        aggregate: namespace_total
+
+    - record: cluster:pod_cpu_usage_cores:sum
+      expr: sum(pod:cpu_usage_cores:rate5m)
+      labels:
+        aggregate: cluster_total
+
+    - record: cluster:pod_memory_usage_bytes:sum
+      expr: sum(pod:memory_usage_bytes:sum)
+      labels:
+        aggregate: cluster_total
+
+    - record: pod:resource_requests_vs_usage:ratio
+      expr: |
+        (
+          sum(rate(container_cpu_usage_seconds_total[5m])) by (pod, namespace)
+          / sum(kube_pod_container_resource_requests_cpu_cores) by (pod, namespace)
+        ) or (
+          sum(container_memory_usage_bytes) by (pod, namespace)
+          / sum(kube_pod_container_resource_requests_memory_bytes) by (pod, namespace)
+        )
+      labels:
+        resource_type: requests_utilization
+
+  - name: pod.lifecycle
+    rules:
+    - record: pod:uptime_seconds
+      expr: time() - kube_pod_created
+      labels:
+        metric_type: uptime
+
+    - record: pod:restart_count:sum
+      expr: sum(kube_pod_container_status_restarts_total) by (pod, namespace)
+      labels:
+        metric_type: restarts
+
+    - alert: PodRestartingFrequently
+      expr: increase(kube_pod_container_status_restarts_total[10m]) > 3
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is restarting frequently"
+        description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 10 minutes"

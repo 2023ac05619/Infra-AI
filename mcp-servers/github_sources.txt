@@ -1,0 +1,4 @@
+•​ VMware MCP: https://github.com/bright8192/esxi-mcp-server
+•​ Kubernetes MCP: https://github.com/Flux159/mcp-server-kubernetes
+•​ Grafana MCP: https://github.com/grafana/mcp-grafana
+•​ Prometheus MCP: https://github.com/pab1it0/prometheus-mcp-server

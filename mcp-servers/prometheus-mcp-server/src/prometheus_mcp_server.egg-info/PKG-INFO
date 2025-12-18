@@ -1,0 +1,295 @@
+Metadata-Version: 2.4
+Name: prometheus_mcp_server
+Version: 1.5.1
+Summary: MCP server for Prometheus integration
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: fastapi>=0.104.0
+Requires-Dist: uvicorn[standard]>=0.24.0
+Requires-Dist: prometheus-api-client
+Requires-Dist: python-dotenv
+Requires-Dist: pyproject-toml>=0.1.0
+Requires-Dist: requests
+Requires-Dist: structlog>=23.0.0
+Requires-Dist: pydantic>=2.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-cov>=4.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: pytest-mock>=3.10.0; extra == "dev"
+Requires-Dist: docker>=7.0.0; extra == "dev"
+Requires-Dist: requests>=2.31.0; extra == "dev"
+Dynamic: license-file
+
+# Prometheus JSON-RPC Server
+[![GitHub Container Registry](https://img.shields.io/badge/ghcr.io-pab1it0%2Fprometheus--mcp--server-blue?logo=docker)](https://github.com/users/pab1it0/packages/container/package/prometheus-mcp-server)
+[![GitHub Release](https://img.shields.io/github/v/release/pab1it0/prometheus-mcp-server)](https://github.com/pab1it0/prometheus-mcp-server/releases)
+[![Codecov](https://img.shields.io/codecov/c/github/pab1it0/prometheus-mcp-server)](https://codecov.io/gh/pab1it0/prometheus-mcp-server)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+[![License](https://img.shields.io/github/license/pab1it0/prometheus-mcp-server)](https://github.com/pab1it0/prometheus-mcp-server/blob/main/LICENSE)
+
+A stateless HTTP JSON-RPC server for Prometheus with open access.
+
+This provides unrestricted access to your Prometheus metrics and queries through a simple JSON-RPC 2.0 API over HTTP, allowing applications to execute PromQL queries and analyze your metrics data without authentication.
+
+## Features
+
+- [x] Execute PromQL queries against Prometheus
+- [x] Discover and explore metrics
+  - [x] List available metrics
+  - [x] Get metadata for specific metrics
+  - [x] View instant query results
+  - [x] View range query results with different step intervals
+- [x] Open access - no authentication required
+- [x] Stateless HTTP JSON-RPC 2.0 API
+- [x] Docker containerization support
+- [x] Simple REST-like interface for metric queries
+
+## Getting Started
+
+### Prerequisites
+
+- Prometheus server accessible from your environment
+- HTTP client or any application that can make JSON-RPC calls
+
+### Installation Methods
+
+<details>
+<summary><b>Docker (Recommended)</b></summary>
+
+Run directly with Docker:
+
+```bash
+docker run -d \
+  --name prometheus-jsonrpc-server \
+  -e PROMETHEUS_URL="http://your-prometheus:9090" \
+  -p 8080:8080 \
+  ghcr.io/pab1it0/prometheus-mcp-server:latest
+```
+</details>
+
+<details>
+<summary><b>Local Development</b></summary>
+
+1. Clone the repository:
+```bash
+git clone https://github.com/pab1it0/prometheus-mcp-server.git
+cd prometheus-mcp-server
+```
+
+2. Install dependencies:
+```bash
+uv venv
+source .venv/bin/activate
+uv pip install -e .
+```
+
+3. Set environment variables:
+```bash
+export PROMETHEUS_URL="http://your-prometheus:9090"
+```
+
+4. Run the server:
+```bash
+prometheus-mcp-server
+```
+</details>
+
+### Configuration Options
+
+| Variable | Description | Required | Default |
+|----------|-------------|----------|---------|
+| `PROMETHEUS_URL` | URL of your Prometheus server | Yes | - |
+| `PROMETHEUS_URL_SSL_VERIFY` | Set to False to disable SSL verification | No | True |
+| `PROMETHEUS_DISABLE_LINKS` | Set to True to disable Prometheus UI links in query results | No | False |
+| `PROMETHEUS_BIND_HOST` | Host for HTTP server | No | 127.0.0.1 |
+| `PROMETHEUS_BIND_PORT` | Port for HTTP server | No | 8080 |
+
+## API Documentation
+
+The server provides a JSON-RPC 2.0 API over HTTP. Send POST requests to `/jsonrpc` with JSON-RPC formatted payloads.
+
+### Available Methods
+
+#### `health_check`
+Returns server health status and Prometheus connectivity.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "health_check",
+  "id": 1
+}
+```
+
+#### `execute_query`
+Execute a PromQL instant query.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "execute_query",
+  "params": {
+    "query": "up",
+    "time": "2023-01-01T00:00:00Z"
+  },
+  "id": 1
+}
+```
+
+#### `execute_range_query`
+Execute a PromQL range query.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "execute_range_query",
+  "params": {
+    "query": "up",
+    "start": "2023-01-01T00:00:00Z",
+    "end": "2023-01-01T01:00:00Z",
+    "step": "15s"
+  },
+  "id": 1
+}
+```
+
+#### `list_metrics`
+List available metrics with optional pagination and filtering.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "list_metrics",
+  "params": {
+    "limit": 100,
+    "offset": 0,
+    "filter_pattern": "cpu"
+  },
+  "id": 1
+}
+```
+
+#### `get_metric_metadata`
+Get metadata for a specific metric.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "get_metric_metadata",
+  "params": {
+    "metric": "up"
+  },
+  "id": 1
+}
+```
+
+#### `get_targets`
+Get information about Prometheus scrape targets.
+
+**Request:**
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "get_targets",
+  "id": 1
+}
+```
+
+### Health Check Endpoint
+
+You can also check server health via GET request:
+
+```bash
+curl http://localhost:8080/health
+```
+
+### Example Usage
+
+```bash
+# Health check
+curl -X GET http://localhost:8080/health
+
+# Execute a query
+curl -X POST http://localhost:8080/jsonrpc \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "execute_query",
+    "params": {"query": "up"},
+    "id": 1
+  }'
+
+# List metrics
+curl -X POST http://localhost:8080/jsonrpc \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "method": "list_metrics",
+    "params": {"limit": 10},
+    "id": 1
+  }'
+```
+
+## Development
+
+Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for detailed information on how to get started, coding standards, and the pull request process.
+
+This project uses [`uv`](https://github.com/astral-sh/uv) to manage dependencies. Install `uv` following the instructions for your platform:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+You can then create a virtual environment and install the dependencies with:
+
+```bash
+uv venv
+source .venv/bin/activate  # On Unix/macOS
+.venv\Scripts\activate     # On Windows
+uv pip install -e .
+```
+
+### Testing
+
+The project includes a comprehensive test suite that ensures functionality and helps prevent regressions.
+
+Run the tests with pytest:
+
+```bash
+# Install development dependencies
+uv pip install -e ".[dev]"
+
+# Run the tests
+pytest
+
+# Run with coverage report
+pytest --cov=src --cov-report=term-missing
+```
+
+When adding new features, please also add corresponding tests.
+
+### Tools
+
+| Tool | Category | Description |
+| --- | --- | --- |
+| `health_check` | System | Health check endpoint for container monitoring and status verification |
+| `execute_query` | Query | Execute a PromQL instant query against Prometheus |
+| `execute_range_query` | Query | Execute a PromQL range query with start time, end time, and step interval |
+| `list_metrics` | Discovery | List all available metrics in Prometheus with pagination and filtering support |
+| `get_metric_metadata` | Discovery | Get metadata for a specific metric |
+| `get_targets` | Discovery | Get information about all scrape targets |
+
+## License
+
+MIT
+
+---
+
+[mcp]: https://modelcontextprotocol.io

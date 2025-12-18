@@ -1,0 +1,493 @@
+{
+  "_metadata": {
+    "source": "https://github.com/grafana-mcp-server",
+    "description": "Complete MCP server tools configuration for Grafana dashboard and datasource management",
+    "version": "1.0.0",
+    "transport": "stateless-http",
+    "protocol": "JSON-RPC 2.0"
+  },
+  "server_info": {
+    "command": "docker run -d --name grafana-mcp-server -e GRAFANA_URL=http://localhost:3000 -e GRAFANA_API_TOKEN=your-token -p 8000:8000 grafana-mcp-server:latest",
+    "endpoint": "http://192.168.203.103:8000/mcp",
+    "accept_headers": "application/json",
+    "response_format": "JSON-RPC 2.0 response objects",
+    "authentication": "API token, basic auth, or none (configurable)"
+  },
+  "mcp_tools": {
+    "list_dashboards": {
+      "name": "list_dashboards",
+      "description": "List all dashboards in Grafana with pagination support",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "list_dashboards",
+          "arguments": {}
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output_schema": {
+        "type": "array",
+        "description": "Array of dashboard objects",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "description": "Dashboard ID"
+            },
+            "uid": {
+              "type": "string",
+              "description": "Dashboard unique identifier"
+            },
+            "title": {
+              "type": "string",
+              "description": "Dashboard title"
+            },
+            "uri": {
+              "type": "string",
+              "description": "Dashboard URI"
+            },
+            "url": {
+              "type": "string",
+              "description": "Dashboard URL"
+            },
+            "slug": {
+              "type": "string",
+              "description": "Dashboard slug"
+            },
+            "type": {
+              "type": "string",
+              "enum": ["dash-db"],
+              "description": "Dashboard type"
+            },
+            "tags": {
+              "type": "array",
+              "description": "Dashboard tags",
+              "items": {
+                "type": "string"
+              }
+            },
+            "isStarred": {
+              "type": "boolean",
+              "description": "Whether dashboard is starred"
+            },
+            "folderId": {
+              "type": "integer",
+              "description": "Folder ID"
+            },
+            "folderUid": {
+              "type": "string",
+              "description": "Folder UID"
+            },
+            "folderTitle": {
+              "type": "string",
+              "description": "Folder title"
+            },
+            "folderUrl": {
+              "type": "string",
+              "description": "Folder URL"
+            }
+          },
+          "required": ["id", "uid", "title", "uri", "url", "type"]
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "List Dashboards",
+        "description": "List all dashboards in Grafana with pagination support"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "list_dashboards",
+          "arguments": {}
+        },
+        "id": 1
+      },
+      "implementation_notes": [
+        "Uses Grafana's /search endpoint with type=dash-db",
+        "Implements automatic pagination to retrieve all dashboards",
+        "Returns complete dashboard metadata including folder information",
+        "Handles authentication via API token or basic auth",
+        "Returns empty array if no dashboards found or on error"
+      ]
+    },
+    "get_dashboard": {
+      "name": "get_dashboard",
+      "description": "Retrieve a specific dashboard by its unique identifier (UID)",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "get_dashboard",
+          "arguments": {
+            "uid": ""
+          }
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "uid": {
+            "type": "string",
+            "description": "Dashboard unique identifier",
+            "example": "abcdefghijk",
+            "minLength": 1
+          }
+        },
+        "required": ["uid"]
+      },
+      "output_schema": {
+        "type": "object",
+        "description": "Complete dashboard object",
+        "properties": {
+          "dashboard": {
+            "type": "object",
+            "description": "Full dashboard definition",
+            "properties": {
+              "id": {
+                "type": ["integer", "null"],
+                "description": "Dashboard ID"
+              },
+              "uid": {
+                "type": "string",
+                "description": "Dashboard UID"
+              },
+              "title": {
+                "type": "string",
+                "description": "Dashboard title"
+              },
+              "tags": {
+                "type": "array",
+                "description": "Dashboard tags",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "timezone": {
+                "type": "string",
+                "description": "Dashboard timezone"
+              },
+              "panels": {
+                "type": "array",
+                "description": "Dashboard panels",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "templating": {
+                "type": "object",
+                "description": "Dashboard templating variables"
+              },
+              "annotations": {
+                "type": "object",
+                "description": "Dashboard annotations"
+              },
+              "refresh": {
+                "type": "string",
+                "description": "Dashboard refresh interval"
+              },
+              "schemaVersion": {
+                "type": "integer",
+                "description": "Dashboard schema version"
+              },
+              "version": {
+                "type": "integer",
+                "description": "Dashboard version"
+              }
+            }
+          },
+          "meta": {
+            "type": "object",
+            "description": "Dashboard metadata",
+            "properties": {
+              "isStarred": {
+                "type": "boolean",
+                "description": "Whether dashboard is starred"
+              },
+              "isHome": {
+                "type": "boolean",
+                "description": "Whether this is the home dashboard"
+              },
+              "isSnapshot": {
+                "type": "boolean",
+                "description": "Whether this is a snapshot"
+              },
+              "folderId": {
+                "type": "integer",
+                "description": "Folder ID"
+              },
+              "folderUid": {
+                "type": "string",
+                "description": "Folder UID"
+              },
+              "folderTitle": {
+                "type": "string",
+                "description": "Folder title"
+              },
+              "folderUrl": {
+                "type": "string",
+                "description": "Folder URL"
+              },
+              "url": {
+                "type": "string",
+                "description": "Dashboard URL"
+              },
+              "version": {
+                "type": "integer",
+                "description": "Dashboard version"
+              },
+              "created": {
+                "type": "string",
+                "description": "Creation timestamp"
+              },
+              "updated": {
+                "type": "string",
+                "description": "Last update timestamp"
+              }
+            }
+          }
+        },
+        "required": ["dashboard", "meta"]
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "Get Dashboard",
+        "description": "Retrieve a specific dashboard by its unique identifier (UID)"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "get_dashboard",
+          "arguments": {
+            "uid": "abcdefghijk"
+          }
+        },
+        "id": 2
+      },
+      "implementation_notes": [
+        "Uses Grafana's /dashboards/uid/{uid} endpoint",
+        "Returns complete dashboard definition including panels and templating",
+        "Includes metadata about folder, permissions, and version info",
+        "Returns null if dashboard not found",
+        "Handles authentication and error responses properly"
+      ]
+    },
+    "list_datasources": {
+      "name": "list_datasources",
+      "description": "List all configured datasources in Grafana",
+      "function": {
+        "method": "tools/call",
+        "params": {
+          "name": "list_datasources",
+          "arguments": {}
+        }
+      },
+      "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      },
+      "output_schema": {
+        "type": "array",
+        "description": "Array of datasource objects",
+        "items": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "integer",
+              "description": "Datasource ID"
+            },
+            "uid": {
+              "type": "string",
+              "description": "Datasource UID"
+            },
+            "orgId": {
+              "type": "integer",
+              "description": "Organization ID"
+            },
+            "name": {
+              "type": "string",
+              "description": "Datasource name"
+            },
+            "type": {
+              "type": "string",
+              "description": "Datasource type (prometheus, influxdb, etc.)",
+              "examples": ["prometheus", "influxdb", "mysql", "postgres"]
+            },
+            "typeLogoUrl": {
+              "type": "string",
+              "description": "URL to datasource type logo"
+            },
+            "access": {
+              "type": "string",
+              "enum": ["proxy", "direct"],
+              "description": "Access mode"
+            },
+            "url": {
+              "type": "string",
+              "description": "Datasource URL"
+            },
+            "user": {
+              "type": "string",
+              "description": "Username for datasource"
+            },
+            "database": {
+              "type": "string",
+              "description": "Database name"
+            },
+            "basicAuth": {
+              "type": "boolean",
+              "description": "Whether basic auth is enabled"
+            },
+            "basicAuthUser": {
+              "type": "string",
+              "description": "Basic auth username"
+            },
+            "isDefault": {
+              "type": "boolean",
+              "description": "Whether this is the default datasource"
+            },
+            "jsonData": {
+              "type": "object",
+              "description": "Additional JSON configuration"
+            },
+            "secureJsonFields": {
+              "type": "object",
+              "description": "Secure JSON fields (passwords, tokens)"
+            },
+            "version": {
+              "type": "integer",
+              "description": "Datasource version"
+            },
+            "readOnly": {
+              "type": "boolean",
+              "description": "Whether datasource is read-only"
+            }
+          },
+          "required": ["id", "uid", "orgId", "name", "type", "access"]
+        }
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "title": "List Datasources",
+        "description": "List all configured datasources in Grafana"
+      },
+      "example_payload": {
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "list_datasources",
+          "arguments": {}
+        },
+        "id": 3
+      },
+      "implementation_notes": [
+        "Uses Grafana's /datasources endpoint",
+        "Returns complete datasource configuration (with sensitive fields masked)",
+        "Includes connection details, authentication settings, and metadata",
+        "Supports all datasource types (Prometheus, InfluxDB, MySQL, etc.)",
+        "Returns empty array if no datasources configured or on error"
+      ]
+    }
+  },
+  "tool_mappings": {
+    "infraai_to_mcp": {
+      "list_grafana_dashboards": {
+        "mcp_tool": "list_dashboards"
+      },
+      "get_grafana_dashboard": {
+        "mcp_tool": "get_dashboard",
+        "parameter_mapping": {
+          "uid": "uid"
+        }
+      },
+      "list_grafana_datasources": {
+        "mcp_tool": "list_datasources"
+      }
+    }
+  },
+  "usage_guide": {
+    "connection": {
+      "environment_setup": [
+        "export MCP_GRAFANA_HTTP_URL=http://192.168.203.103:8000",
+        "export MCP_GRAFANA_TRANSPORT=stateless-http"
+      ],
+      "server_startup": "docker run -d --name grafana-mcp-server -e GRAFANA_URL=http://localhost:3000 -e GRAFANA_API_TOKEN=your-token -p 8000:8000 grafana-mcp-server:latest",
+      "test_connection": "curl -X POST http://192.168.203.103:8000/mcp -H 'Content-Type: application/json' -d '{\"jsonrpc\":\"2.0\",\"method\":\"initialize\",\"id\":1}'"
+    },
+    "examples": [
+      {
+        "description": "List all dashboards",
+        "mcp_call": {
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "name": "list_dashboards",
+            "arguments": {}
+          },
+          "id": 1
+        },
+        "expected_response": {
+          "jsonrpc": "2.0",
+          "id": 1,
+          "result": [
+            {
+              "id": 1,
+              "uid": "abcdefghijk",
+              "title": "System Overview",
+              "uri": "db/system-overview",
+              "url": "/d/abcdefghijk/system-overview",
+              "type": "dash-db",
+              "tags": ["system", "overview"],
+              "isStarred": false,
+              "folderId": 0,
+              "folderTitle": "General"
+            }
+          ]
+        }
+      },
+      {
+        "description": "Get specific dashboard",
+        "mcp_call": {
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "name": "get_dashboard",
+            "arguments": {
+              "uid": "abcdefghijk"
+            }
+          },
+          "id": 2
+        }
+      },
+      {
+        "description": "List datasources",
+        "mcp_call": {
+          "jsonrpc": "2.0",
+          "method": "tools/call",
+          "params": {
+            "name": "list_datasources",
+            "arguments": {}
+          },
+          "id": 3
+        }
+      }
+    ],
+    "error_handling": {
+      "jsonrpc_errors": "Include 'code' and 'message' fields",
+      "http_errors": "Follow standard REST conventions",
+      "grafana_errors": "Wrapped in JSON-RPC error responses"
+    },
+    "authentication": {
+      "api_token": "Set GRAFANA_API_TOKEN environment variable",
+      "basic_auth": "Set GRAFANA_USERNAME and GRAFANA_PASSWORD",
+      "none": "For development/testing environments"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+# Sample Infrastructure Document
+
+## Network Architecture
+
+Our infrastructure consists of multiple components working together:
+
+### Core Services
+- **Frontend**: Next.js application running on port 3000
+- **Backend**: FastAPI service running on port 8000
+- **Database**: PostgreSQL for relational data storage
+- **Vector Database**: Qdrant for embedding storage and similarity search
+
+### External Services
+- **Prometheus**: Metrics collection at 192.168.203.33:9090
+- **Ollama**: LLM service at 192.168.200.201:12434
+- **Redis**: Caching and queue management on port 6379
+
+### Data Pipeline
+The RAG (Retrieval-Augmented Generation) pipeline processes documents through:
+1. Text extraction from uploaded files
+2. Document chunking into semantic units
+3. Vector embedding generation
+4. Storage in Qdrant vector database
+5. Retrieval during chat queries
+
+### Monitoring
+Infrastructure monitoring includes:
+- Service health checks
+- Performance metrics collection
+- Log aggregation and analysis
+- Automated alerting for issues
+
+This document demonstrates how uploaded content becomes searchable knowledge for the AI assistant.
