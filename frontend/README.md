@@ -1,6 +1,8 @@
 # InfraChat - AI Infrastructure Assistant
 
-InfraChat is an AI-powered web application that helps you interact with your infrastructure using natural language. It features a ChatGPT-like interface with dynamic sliding panes that automatically appear when the AI responds with structured information like URLs, credentials, or SSH commands.
+InfraChat is an AI-powered web application that provides natural language interaction with comprehensive infrastructure management capabilities. Powered by the InfraAI backend, it offers intelligent AIOps features including VMware ESXi management, Kubernetes operations, Prometheus monitoring, and Grafana dashboard access through MCP (Model Context Protocol) integrations.
+
+The interface features a ChatGPT-like design with dynamic sliding panes that automatically display structured information like URLs, credentials, SSH commands, and infrastructure data when the AI responds.
 
 ##  Features
 
@@ -45,6 +47,33 @@ Slides in from the right when AI response contains technical data:
 -  **Code snippets** and script previews
 - **Syntax highlighting** for better readability
 - **Pin/Unpin** functionality to keep pane open
+
+###  AI Infrastructure Assistant Capabilities
+InfraChat provides access to comprehensive infrastructure management through natural language:
+
+#### VMware ESXi Management (16 tools)
+- **VM Operations**: Create, delete, clone, power on/off VMs
+- **VM Monitoring**: Get VM info, list all VMs, check host status
+- **Storage Management**: List datastores and storage resources
+- **Network Management**: List available networks
+- **Snapshots**: Create, list, and delete VM snapshots
+
+#### Kubernetes Operations (11 tools)
+- **Resource Management**: Get, describe, delete pods, deployments, services
+- **Scaling**: Scale deployments and check rollout status
+- **Debugging**: View logs, execute commands in containers
+- **Networking**: Port forward to pods, manage node taints
+- **Configuration**: Apply manifests and manage resources
+
+#### Prometheus Monitoring (6 tools)
+- **Metrics Queries**: Execute instant and range PromQL queries
+- **Discovery**: List available metrics and get metadata
+- **Health Checks**: Monitor Prometheus connectivity
+- **Target Management**: View scrape targets and their status
+
+#### Grafana Dashboard Access (3 tools)
+- **Dashboard Management**: List and retrieve dashboard configurations
+- **Data Source Discovery**: View configured data sources
 
 ###  User Experience
 - **Dark/Light mode** toggle with system preference detection

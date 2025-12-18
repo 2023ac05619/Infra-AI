@@ -43,9 +43,15 @@ This will:
 └─────────────────┘    └─────────────────┘
          │                       │
          └───────────────────────┘
-              Docker Services
-          (PostgreSQL, Redis, Ollama)
-```
+         ┌───────────────────────┐
+         │   MCP Integrations    │
+         │                       │
+         │ • VMware ESXi Server  │
+         │ • Kubernetes Server   │
+         │ • Prometheus Server   │
+         │ • Grafana Server      │
+         └───────────────────────┘
+        
 
 ##  Features
 
@@ -60,8 +66,34 @@ This will:
 - **Intelligent AIOps** with LangGraph reasoning
 - **Self-Healing Policies** for automated remediation
 - **Network Discovery** with nmap scanning
-- **Multi-Cloud Support** via MCP protocol stubs
+- **Multi-Cloud Support** via MCP protocol implementations
 - **REST & WebSocket APIs**
+
+### MCP (Model Context Protocol) Integrations
+
+#### VMware ESXi Integration
+- **16 VM Management Tools**: Power operations, lifecycle management, snapshots, host info
+- **Transport**: Stateless HTTP JSON-RPC
+- **Endpoint**: `http://192.168.203.103:8090/mcp`
+- **Capabilities**: VM creation, deletion, cloning, snapshots, datastore/network management
+
+#### Kubernetes Integration
+- **11 Kubernetes Tools**: Resource management, scaling, logging, exec, port-forwarding
+- **Transport**: Streamable HTTP JSON-RPC
+- **Endpoint**: `http://192.168.203.103:8080/mcp`
+- **Capabilities**: kubectl operations, deployment scaling, pod management, taints
+
+#### Prometheus Integration
+- **6 Monitoring Tools**: Instant/range queries, metrics discovery, health checks
+- **Transport**: Stateless HTTP JSON-RPC
+- **Endpoint**: `http://192.168.203.103:8080/jsonrpc`
+- **Capabilities**: PromQL queries, target monitoring, metric metadata
+
+#### Grafana Integration
+- **3 Dashboard Tools**: Dashboard and datasource management
+- **Transport**: Stateless HTTP JSON-RPC
+- **Endpoint**: `http://192.168.203.103:8000/mcp`
+- **Capabilities**: Dashboard retrieval, datasource listing
 
 ##  Sample Data
 
@@ -237,4 +269,4 @@ Your InfraAI application is now running with:
 2. **Create Account**: Enter any username and password to register as admin
 3. **Start Chatting**: Use the AI infrastructure assistant
 
-Enjoy exploring your AI-powered infrastructure assistant! 
+Enjoy exploring AI-powered infrastructure assistant!

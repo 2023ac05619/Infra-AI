@@ -24,7 +24,7 @@ Intelligent AIOps platform with autonomous remediation capabilities powered by F
 4. **Tools & Adapters** (`app/tools/`)
    - Ollama LLM adapter for reasoning
    - Network scanner using nmap
-   - MCP clients (VMware, Kubernetes, Prometheus, Grafana)
+   - **MCP Server Integrations**: VMware ESXi (16 tools), Kubernetes (11 tools), Prometheus (6 tools), Grafana (3 tools)
    - Policy management tools
 
 ### API Endpoints
@@ -201,8 +201,37 @@ curl -X POST http://localhost:8001/api/alerts \
     ├── ollama_adapter.py
     ├── network_scanner.py
     ├── policy_tools.py
-    └── mcp_client.py     # MCP stubs
+    └── mcp_client.py     # MCP server integrations
 ```
+
+### MCP Server Integrations
+
+The backend includes comprehensive MCP (Model Context Protocol) server integrations for infrastructure management:
+
+#### VMware ESXi Integration (16 tools)
+- VM lifecycle: `create_vm`, `delete_vm`, `clone_vm`
+- Power management: `power_on_vm`, `power_off_vm`, `suspend_vm`, `reset_vm`, `shutdown_vm`, `reboot_vm`
+- Information: `get_vm_info`, `get_host_info`, `list_vms`
+- Storage: `list_datastores`
+- Networking: `list_networks`
+- Snapshots: `get_vm_snapshots`, `create_snapshot`, `delete_snapshot`
+
+#### Kubernetes Integration (11 tools)
+- Resource management: `kubectl_get`, `kubectl_describe`, `kubectl_delete`
+- Operations: `kubectl_apply`, `kubectl_scale`, `kubectl_rollout_status`
+- Debugging: `kubectl_logs`, `kubectl_exec`
+- Networking: `kubectl_port_forward`
+- Node management: `kubectl_taint`
+- Cleanup: `cleanup`
+
+#### Prometheus Integration (6 tools)
+- Queries: `execute_query`, `execute_range_query`
+- Discovery: `list_metrics`, `get_metric_metadata`
+- Monitoring: `get_targets`, `health_check`
+
+#### Grafana Integration (3 tools)
+- Dashboards: `list_dashboards`, `get_dashboard`
+- Datasources: `list_datasources`
 
 ### Adding New MCP Actions
 
@@ -244,7 +273,7 @@ Policies define when and how to perform remediation:
 6. **Add authentication middleware** beyond simple API key
 7. **Use connection pooling** for PostgreSQL
 8. **Implement rate limiting**
-9. **Replace MCP stubs** with real integrations
+9. **Configure MCP server endpoints** for production infrastructure
 10. **Add comprehensive error handling**
 
 ## License

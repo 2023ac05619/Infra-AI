@@ -14,13 +14,8 @@ from typing import Dict, Any, Optional
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("test-grafana-mcp")
 
-# Add the app directory to Python path
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
-
 class GrafanaMCPClient:
-    def __init__(self, server_url: str = "http://192.168.203.103:8000/mcp"):
+    def __init__(self, server_url: str = "http://localhost:8000/mcp"):
         self.server_url = server_url
         self.session: Optional[aiohttp.ClientSession] = None
         self.request_id = 1
@@ -143,6 +138,15 @@ async def test_grafana_mcp_server():
         except json.JSONDecodeError as e:
             print(f" Failed to parse datasources response: {e}")
             print(f"  Raw response: {datasources_content[:200]}...")
+        print()
+
+        # Test 5: Test error handling with invalid tool
+        print("5. Testing error handling with invalid tool...")
+        try:
+            error_response = await client.call_tool("nonexistent_tool")
+            print(f" Expected error but got: {error_response}")
+        except Exception as e:
+            print(f" Error handling works: {str(e)[:100]}...")
         print()
 
         print("=== All tests completed! ===")
