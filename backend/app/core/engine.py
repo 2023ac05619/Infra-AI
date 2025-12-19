@@ -958,14 +958,26 @@ async def verification_node(state: AgentState) -> AgentState:
                         "resource": tool_call_data.get("resource"),
                     }
 
-                    # Handle special case: extract uid from params for Grafana operations
+                    # Handle special case: extract uid or title for Grafana operations
                     if (tool_call_data.get("domain") == "grafana" and
-                        tool_call_data.get("action") == "get" and
-                        tool_call_data.get("params") and
-                        isinstance(tool_call_data.get("params"), dict) and
-                        "uid" in tool_call_data.get("params")):
-                        arguments["name"] = tool_call_data["params"]["uid"]
-                        print(f"[VERIFICATION] Extracted UID from params: {arguments['name']}")
+                        tool_call_data.get("action") == "get"):
+                        # First check if uid/title is directly in the arguments
+                        if "uid" in tool_call_data:
+                            arguments["name"] = tool_call_data["uid"]
+                            print(f"[VERIFICATION] Extracted UID from direct arguments: {arguments['name']}")
+                        elif "title" in tool_call_data:
+                            arguments["name"] = tool_call_data["title"]
+                            print(f"[VERIFICATION] Extracted title from direct arguments: {arguments['name']}")
+                        else:
+                            # Check in params object (legacy support)
+                            params = tool_call_data.get("params")
+                            if params and isinstance(params, dict):
+                                if "uid" in params:
+                                    arguments["name"] = params["uid"]
+                                    print(f"[VERIFICATION] Extracted UID from params: {arguments['name']}")
+                                elif "title" in params:
+                                    arguments["name"] = params["title"]
+                                    print(f"[VERIFICATION] Extracted title from params: {arguments['name']}")
 
                     # Only include non-None values for standard fields
                     for key in ["name", "namespace", "query"]:
@@ -1030,9 +1042,41 @@ async def agent_node(state: AgentState) -> AgentState:
 
             import re
             uid_match = re.search(r'uid[:\s]*"?([a-zA-Z0-9]+)"?', user_input)
-            name_match = re.search(r'(?:get|find|show)\s+(?:the\s+)?["\']?([^"\']+(?:dashboard|chart|panel)[^"\']*)["\']?', user_input, re.IGNORECASE) or \
-                        re.search(r'(?:dashboard|named|title)[:\s]+"([^"]+)"', user_input) or \
-                        re.search(r'(?:dashboard|named|title)[:\s]+([a-zA-Z0-9\s\-_]+)(?:\s|$)', user_input)
+            # Very specific regex to avoid matching list phrases - only match actual dashboard names
+            name_match = None
+
+            # Pattern 1: "dashboard named/called/titled 'X'"
+            named_match = re.search(r'(?:dashboard|chart|panel|graph)\s+(?:named|called|titled?)\s+["\']?([a-zA-Z][a-zA-Z0-9\s\-_]+(?:\s+[a-zA-Z][a-zA-Z0-9\s\-_]+)*)["\']?', user_input, re.IGNORECASE)
+            if named_match:
+                name_match = named_match
+                print(f"[ENGINE] Matched named pattern: '{named_match.group(1)}'")
+
+            # Pattern 2: Quoted dashboard names like "My Dashboard"
+            quoted_match = re.search(r'(?:get|find|show)\s+(?:the\s+)?["\']([^"\']+(?:dashboard|chart|panel|graph)?[^"\']*)["\']', user_input, re.IGNORECASE)
+            if quoted_match:
+                name_match = quoted_match
+                print(f"[ENGINE] Matched quoted pattern: '{quoted_match.group(1)}'")
+
+            # Pattern 3: Specific dashboard names after colon like "dashboard: MyDashboard"
+            colon_match = re.search(r'(?:dashboard|chart|panel|graph)[:\s]+([a-zA-Z][a-zA-Z0-9\s\-_]+(?:\s+[a-zA-Z][a-zA-Z0-9\s\-_]+)*)(?:\s|$)', user_input, re.IGNORECASE)
+            if colon_match:
+                name_match = colon_match
+                print(f"[ENGINE] Matched colon pattern: '{colon_match.group(1)}'")
+
+            # EXCLUDE patterns that indicate listing rather than searching
+            if name_match:
+                extracted_name = name_match.group(1).strip().lower()
+                # Don't match if it contains words that indicate listing
+                exclude_words = ['all', 'from', 'list', 'show', 'display', 'every', 'dashboards', 'charts', 'panels', 'graphs']
+                if any(word in extracted_name for word in exclude_words):
+                    print(f"[ENGINE] Excluding match '{extracted_name}' - contains list indicator")
+                    name_match = None
+                # Don't match if it starts with articles/pronouns
+                elif extracted_name.startswith(('the ', 'a ', 'an ', 'my ', 'your ', 'our ', 'their ')):
+                    print(f"[ENGINE] Excluding match '{extracted_name}' - starts with article/pronoun")
+                    name_match = None
+                else:
+                    print(f"[ENGINE] Valid dashboard name match: '{extracted_name}'")
 
             print(f"[ENGINE] DEBUG: uid_match={uid_match}, name_match={name_match}")
 
@@ -1407,7 +1451,65 @@ You can respond naturally but when using tools, format them as JSON tool calls w
         except Exception as e:
             print(f"[ENGINE] Grafana raw data check failed: {e}")
 
-        # For non-Grafana results, use LLM formatting
+        # Check if this is Prometheus query result data
+        is_prometheus_data = False
+        try:
+            if isinstance(tool_result, str):
+                parsed = json.loads(tool_result)
+            else:
+                parsed = tool_result
+
+            # Check if it's a JSON-RPC response with Prometheus resultType
+            if isinstance(parsed, dict) and parsed.get("jsonrpc") == "2.0" and "result" in parsed:
+                prometheus_result = parsed["result"]
+                if isinstance(prometheus_result, dict) and "resultType" in prometheus_result:
+                    result_type = prometheus_result.get("resultType")
+                    if result_type in ["vector", "matrix"]:
+                        is_prometheus_data = True
+                        print(f"[ENGINE] Detected Prometheus {result_type} data")
+
+                        # Format Prometheus metrics data
+                        result_data = prometheus_result.get("result", [])
+                        if result_type == "vector":
+                            # Format instant query results
+                            formatted_list = []
+                            for i, item in enumerate(result_data):
+                                if isinstance(item, dict):
+                                    metric = item.get("metric", {})
+                                    value = item.get("value", [])
+                                    if len(value) >= 2:
+                                        timestamp, metric_value = value[0], value[1]
+
+                                        # Build metric labels string
+                                        labels = []
+                                        for k, v in metric.items():
+                                            labels.append(f"{k}=\"{v}\"")
+                                        labels_str = "{" + ", ".join(labels) + "}"
+
+                                        formatted_list.append(f"  {i+1:2d}. {labels_str}: {metric_value}")
+
+                            formatted_output = f"📊 **Prometheus Query Results**\n\n" + \
+                                             f"Query executed successfully. Found {len(result_data)} metric results:\n\n" + \
+                                             "\n".join(formatted_list) + \
+                                             f"\n\n**Query Details:**\n" + \
+                                             f"• Result Type: {result_type}\n" + \
+                                             f"• Total Results: {len(result_data)}\n" + \
+                                             f"• PromQL: `rate(container_cpu_usage_seconds_total[5m])`"
+                        else:
+                            # Handle matrix/range query results
+                            formatted_output = f"📈 **Prometheus Range Query Results**\n\n" + \
+                                             f"Range query executed successfully. Found {len(result_data)} time series.\n\n" + \
+                                             f"**Note:** Range query results contain timestamped data points.\n" + \
+                                             f"• Result Type: {result_type}\n" + \
+                                             f"• Time Series Count: {len(result_data)}"
+
+                        return {
+                            **state,
+                            "messages": [AIMessage(content=formatted_output)]
+                        }
+        except Exception as e:
+            print(f"[ENGINE] Prometheus data check failed: {e}")
+
         # Create a formatting prompt for the LLM
         formatting_prompt = f"""
 You are an infrastructure assistant. Format the following MCP server response in a user-friendly, attractive way.
@@ -1436,14 +1538,14 @@ FORMATTING INSTRUCTIONS:
     Name                           Namespace   Status    Created At
     ---------------------------------------------------------------
     nginx-test-app-55fdf4c644-2p2b5 default     Running   2025-12-13T09:30:23Z
-    backend-api-78f9d2a122-8k9j1    default     Error     2025-12-13T09:35:10Z 
+    backend-api-78f9d2a122-8k9j1    default     Error     2025-12-13T09:35:10Z
     ```
 
     Total pods found: 2
     Status breakdown:
     * **Running:** 1
     * **Error:** 1
-    
+
 - For a dashboard list:
      Dashboards
      ```
@@ -1452,13 +1554,13 @@ FORMATTING INSTRUCTIONS:
     1   Alertmanager / Overview default     alertmanager-overview   General
     2   CoreDNS                             vkQ0UHxik               General
     ```
-    
+
     Total dashboards: 2
-    
+
 - If no items are present:
      Pods
     No items found.
-    
+
 - For single pod summaries:
      Pod: nginx-app (Status: Running, Namespace: default)
 
@@ -1689,8 +1791,31 @@ Format this response attractively, following these rules:
                 print(f"[ENGINE] Falling back to keyword-based tool detection")
 
                 # Check for infrastructure keywords and trigger appropriate tools
-                if "cpu" in user_input and "prometheus" in user_input:
-                    # Pod CPU usage query
+                # If user mentions CPU/memory usage, assume they want Prometheus metrics
+                if "cpu" in user_input or "memory" in user_input:
+                    print(f"[ENGINE] Detected CPU/memory query, assuming Prometheus domain")
+
+                    # Parse container/pod name from user input for both CPU and memory
+                    import re
+                    container_match = re.search(r'(?:cpu|memory)\s+(?:usage\s+)?(?:of|for|from)\s+([a-zA-Z0-9\-_.]+)', user_input, re.IGNORECASE)
+
+                    if "cpu" in user_input:
+                        if container_match:
+                            container_name = container_match.group(1)
+                            print(f"[ENGINE] Detected specific container for CPU: {container_name}")
+                            query = f'rate(container_cpu_usage_seconds_total{{container="{container_name}"}}[5m])'
+                        else:
+                            print(f"[ENGINE] No specific container detected for CPU, querying all containers")
+                            query = "rate(container_cpu_usage_seconds_total[5m])"
+                    else:  # memory
+                        if container_match:
+                            container_name = container_match.group(1)
+                            print(f"[ENGINE] Detected specific container for memory: {container_name}")
+                            query = f'container_memory_usage_bytes{{container="{container_name}"}}'
+                        else:
+                            print(f"[ENGINE] No specific container detected for memory, querying all containers")
+                            query = "container_memory_usage_bytes"
+
                     tool_calls = [{
                         "id": "call_1",
                         "function": {
@@ -1698,8 +1823,44 @@ Format this response attractively, following these rules:
                             "arguments": json.dumps({
                                 "domain": "prometheus",
                                 "action": "query",
-                                "query": "rate(container_cpu_usage_seconds_total[5m])"
+                                "query": query
                             })
+                        },
+                        "type": "function"
+                    }]
+                    return {
+                        **state,
+                        "messages": [AIMessage(
+                            content="",
+                            additional_kwargs={"tool_calls": tool_calls}
+                        )]
+                    }
+
+                elif "pod" in user_input and ("list" in user_input or "show" in user_input or "get" in user_input):
+                    # List pods - extract namespace if specified
+                    import re
+                    namespace = None
+                    # Look for namespace patterns like:
+                    # "in the namespace called kube-system", "namespace kube-system", "kube-system namespace"
+                    ns_match = re.search(r'(?:in\s+(?:the\s+)?)?namespace(?:s)?(?:\s+called)?\s+([a-zA-Z0-9\-_]+)', user_input, re.IGNORECASE) or \
+                               re.search(r'([a-zA-Z0-9\-_]+)\s+namespace(?:s)?', user_input, re.IGNORECASE)
+                    if ns_match:
+                        # Get the captured group (namespace name)
+                        namespace = ns_match.group(1)
+
+                    args = {
+                        "domain": "kubernetes",
+                        "action": "list",
+                        "resource": "pods"
+                    }
+                    if namespace:
+                        args["namespace"] = namespace
+
+                    tool_calls = [{
+                        "id": "call_1",
+                        "function": {
+                            "name": "infra_command",
+                            "arguments": json.dumps(args)
                         },
                         "type": "function"
                     }]
@@ -1721,28 +1882,6 @@ Format this response attractively, following these rules:
                                 "domain": "kubernetes",
                                 "action": "list",
                                 "resource": "namespaces"
-                            })
-                        },
-                        "type": "function"
-                    }]
-                    return {
-                        **state,
-                        "messages": [AIMessage(
-                            content="",
-                            additional_kwargs={"tool_calls": tool_calls}
-                        )]
-                    }
-
-                elif "pod" in user_input and ("list" in user_input or "show" in user_input or "get" in user_input):
-                    # List pods
-                    tool_calls = [{
-                        "id": "call_1",
-                        "function": {
-                            "name": "infra_command",
-                            "arguments": json.dumps({
-                                "domain": "kubernetes",
-                                "action": "list",
-                                "resource": "pods"
                             })
                         },
                         "type": "function"
