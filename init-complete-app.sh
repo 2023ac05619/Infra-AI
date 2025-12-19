@@ -80,11 +80,11 @@ setup_backend() {
 
     # Initialize database
     print_status "Initializing backend database..."
-    python scripts/init_db.py
+    python3 scripts/init_db.py
 
     # Load sample policies
     print_status "Loading sample policies..."
-    python scripts/load_sample_policies.py
+    python3 scripts/load_sample_policies.py
 
     cd ..
     print_success "Backend setup complete!"
@@ -114,7 +114,7 @@ start_services() {
     # Start backend in background
     print_status "Starting InfraAI backend..."
     cd backend
-    python -m app.main &
+    python3 -m app.main &
     BACKEND_PID=$!
     cd ..
 
