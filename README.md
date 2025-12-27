@@ -7,7 +7,7 @@ A full-stack AIOps platform combining intelligent infrastructure management with
 ### One-Command Setup
 ```bash
 # Make sure Docker is running, then:
-./setup-complete-app.sh
+./init-complete-app.sh
 ```
 
 This will:
@@ -52,6 +52,7 @@ This will:
          │ • Grafana Server      │
          └───────────────────────┘
         
+```
 
 ##  Features
 
@@ -172,14 +173,15 @@ BACKEND_API_KEY="dev-key-12345"
 ```bash
 # Test all available Ollama models
 ./test-ollama-models.sh
-
-# This will:
-#  Check Ollama connectivity
-#  List all available models with sizes
-#  Test inference with each model
-#  Validate responses and performance
-#  Provide model recommendations
 ```
+
+This will:
+-  Check Ollama connectivity
+-  List all available models with sizes
+-  Test inference with each model
+-  Validate responses and performance
+-  Provide model recommendations
+
 
 ### Manual API Health Checks
 ```bash
@@ -213,7 +215,7 @@ curl -X POST http://localhost:8001/api/chat \
 -  Authentication and security
 -  Chat functionality with AI
 -  Policy CRUD operations
-```
+
 
 ### Database Issues
 ```bash
@@ -227,20 +229,20 @@ cd frontend && rm db/custom.db && npm run db:push
 ### Reset Admin Credentials
 ```bash
 # Reset admin user and all user data (WARNING: destructive)
-./reset-admin.sh
-
-# This will:
-# - Delete all existing users
-# - Reset the database
-# - Create a fresh admin user (admin@infraai.com / admin123)
+./reset-admin_account_password.sh
 ```
+This will:
+- Delete all existing users
+- Reset the database
+- Create a fresh admin user (admin@infraai.com / admin123)
+
 
 ### Permission Issues
 ```bash
 # Make scripts executable
-chmod +x setup-complete-app.sh
+chmod +x init-complete-app.sh
 chmod +x backend/setup.sh
-chmod +x reset-admin.sh
+chmod +x reset-admin_account_password.sh
 ```
 
 ##  API Documentation
